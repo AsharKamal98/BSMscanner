@@ -2,7 +2,7 @@ from UserInput import model
 
 
 SPheno_path = "SPheno-4.0.5"
-HB_path = "higgsbounds-5.10.2/build"
+HB_path = "higgsbounds-5.10.2/build"    # Fix paths (remove build) and fix Run HBS shell script paths
 HS_path = "higgssignals-2.6.2/build"
 CT_path = "DRalgo-1.0.2-beta/examples"
 CT_infile_name = "LS_TColor_DRPython" #Remove .py

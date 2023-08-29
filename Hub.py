@@ -133,7 +133,7 @@ def SearchGrid(construct_collider_data=True, construct_cosmic_data=True, keep_ol
                     passed_collider_constr = DC.Analysis(in_param_list, mass_list=mass_list, training_data=False, optimize=optimize)
                 if read_data=='both' or read_data=='cosmic':
                     if passed_collider_constr:
-                        print("PASSED COLLIDER DATA CONSTRAINTS")
+                        #print("PASSED COLLIDER DATA CONSTRAINTS")
                         DC.AnalysisCosmic(in_param_list, training_data=False)
                     else:
                         transition_order = 3

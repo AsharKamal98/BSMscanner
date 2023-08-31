@@ -1,53 +1,91 @@
 import numpy as np
 from operator import itemgetter
 from functools import reduce
+import sys
 
 from UserInput import *
 
 
 
-def InitializeDataFiles(training_data): #Fix! Turn training data to int
-    if training_data:
-        DataFile_FreeParam = open("TDataFile_FreeParam", "w")
-        DataFile_Labels = open("TDataFile_Labels", "w")
-        DataFile_Masses = open("TDataFile_Masses", "w")
-        DataFile_Labels_GW = open("TDataFile_Labels_GW", "w")
+####################### INITIALIZING DATA FILES ########################
+########################################################################
 
-    else:
-        DataFile_FreeParam = open("PDataFile_FreeParam", "w")
-        DataFile_Labels = open("PDataFile_Labels", "w")
-        DataFile_Masses = open("PDataFile_Masses", "w")
-        DataFile_Labels_GW = open("PDataFile_Labels_GW", "w")
+prefixes = ["T","P","F"]
+def InitializeDataFiles(data_type1):
+    prefix = prefixes[data_type1]
 
-    #if pos_data:
-    #    DataFile_FreeParam = open("FDataFile_FreeParam", "w")
-    #    DataFile_Labels = open("FDataFile_Labels", "w")
-    #    DataFile_Masses = open("FDataFile_Masses", "w")
-    #    DataFile_Labels_GW = open("FDataFile_Labels_GW", "w")
+    with open("{}DataFile_FreeParam".format(prefix), "w") as f:
+        f.write(f'{"FREE PARAMETERS"} \n TEMP \n')
 
-    DataFile_FreeParam.write(f'{"INPUT PARAMETERS / PATTERNS"} \n')
+    with open("{}DataFile_FixedParam".format(prefix), "w") as f:
+        f.writelines(f'{"FIXED PARAMETERS"} \n TEMP \n')
+
+    with open("{}DataFile_Labels_Col".format(prefix), "w") as f:
+        f.writelines(f'{"COLLIDER OBSERVABLES"} \n{"T parameter":<{19}} {"S parameter":<{19}} {"U parameter":<{19}} {"Unitarity":<{19}} {"HB Result":<{19}} {"HS chi^2(mu)":<{19}} {"HS chi^2(mh)":<{19}} {"HS p-value":<{19}} {"Successful run":<{19}} \n')
+
+    with open("{}DataFile_Labels_GW".format(prefix), "w") as f:
+        f.writelines(f'{"GRAVITATIONAL WAVE OBSERVABLES"} \n{"PT order":<{20}} {"alpha":<{20}} {"beta":<{20}} {"fpeak":<{20}} {"ompeak":<{20}} {"STTn":<{20}} {"STTp":<{20}} {"dSTdTTn":<{20}} {"dSTdTTp":<{20}} {"Tc":<{20}} {"Tn":<{20}} {"Tp":<{20}} {"low_vev":<{20}} {"high_vev":<{20}} {"dV":<{20}} {"dVdT":<{20}}  {"action":<{20}} \n')
+
     #free_param_list = df_free2['Parameter name'].tolist()
-    Lag_param_list = df_L['Parameter name'].tolist()
-    for string in Lag_param_list:
-        DataFile_FreeParam.write(f'{string:<{20}}')
-    DataFile_FreeParam.write('\n')
+    #Lag_param_list = df_L['Parameter name'].tolist()
+    #for string in Lag_param_list:
+    #    DataFile_FreeParam.write(f'{string:<{20}}')
+    #DataFile_FreeParam.write('\n')
+
+    return
+
+
+
+
+####################### WRITING DATA FILES #############################
+########################################################################
+
+def WriteFreeParam(free_param_list, training_data):
+    if training_data:
+        DataFile_FreeParam = open("TDataFile_FreeParam", "a") # Fix!
+    else:
+        DataFile_FreeParam = open("PDataFile_FreeParam", "a") # Fix!
+    for i in range(len(free_param_list)):
+        DataFile_FreeParam.writelines(f'{round(free_param_list[i],5):<{20}}')
+    DataFile_FreeParam.writelines('\n')
     DataFile_FreeParam.close()
 
-    DataFile_Labels.writelines(f'{"LABELS / OUTPUT"} \n')
-    DataFile_Labels.writelines(f'{"T parameter":<{19}} {"S parameter":<{19}} {"U parameter":<{19}} {"Unitarity":<{19}} {"HB Result":<{19}} {"HS chi^2(mu)":<{19}} {"HS chi^2(mh)":<{19}} {"HS p-value":<{19}} {"Real masses":<{19}} \n')
+def WriteFixedParam(fixed_param_list, training_data):
+    if training_data:
+        DataFile_FixedParam = open("TDataFile_FixedParam", "a") # Fix!
+    else:
+        DataFile_FixedParam = open("PDataFile_FixedParam", "a") # Fix!
+    for i in range(len(fixed_param_list)):
+        DataFile_FixedParam.writelines(f'{round(fixed_param_list[i],5):<{20}}')
+    DataFile_FixedParam.writelines('\n')
+    DataFile_FixedParam.close()
+
+def WriteLabelsCol(successful_run, spheno_output2, spheno_output3, higgsbounds_output, higgssignals_output, training_data):
+    if training_data:
+        DataFile_Labels = open("TDataFile_Labels", "a")
+    else:
+        DataFile_Labels = open("PDataFile_Labels", "a")
+    for i in range(3):
+        DataFile_Labels.writelines(f'{spheno_output2[i]:<{20}}')
+    DataFile_Labels.writelines(f'{spheno_output3:<{20}} {higgsbounds_output:<{20}} {higgssignals_output[0]:<{20}} {higgssignals_output[1]:<{20}} {higgssignals_output[2]:<{20}} {successful_run:<{20}} \n')
     DataFile_Labels.close()
 
-    DataFile_Masses.writelines(f'{"PARTICLE MASSES"} \n {"mH":<{20}} {"mN1":<{20}} {"mN2":<{20}} {"mC":<{20}} \n')
-    DataFile_Masses.close()   # Fix! Generalize
-
-    DataFile_Labels_GW.writelines(f'{"GRAVITATIONAL WAVE OBSERVABLES"} \n{"PT order":<{20}} {"alpha":<{20}} {"beta":<{20}} {"fpeak":<{20}} {"ompeak":<{20}} {"STTn":<{20}} {"STTp":<{20}} {"dSTdTTn":<{20}} {"dSTdTTp":<{20}} {"Tc":<{20}} {"Tn":<{20}} {"Tp":<{20}} {"low_vev":<{20}} {"high_vev":<{20}} {"dV":<{20}} {"dVdT":<{20}}  {"action":<{20}} \n')
+def WriteLabelsGW(transition_order, alpha, beta, fpeak, ompeak, STTn, STTp, dSTdTTn, dSTdTTp, Tc, Tn, Tp, low_vev, high_vev, dV, dVdT, action, training_data):
+    if training_data:
+        DataFile_Labels_GW = open("TDataFile_Labels_GW", "a")
+    else:
+        DataFile_Labels_GW = open("PDataFile_Labels_GW", "a") 
+    DataFile_Labels_GW.writelines(f'{transition_order:<{20}} {alpha:<{20}} {beta:<{20}} {fpeak:<{20}} {ompeak:<{20}} {STTn:<{20}} {STTp:<{20}} {dSTdTTn:<{20}} {dSTdTTp:<{20}} {Tc:<{20}} {Tn:<{20}} {Tp:<{20}} {low_vev:<{20}} {high_vev:<{20}} {dV:<{20}} {dVdT:<{20}} {action:<{20}} \n')
     DataFile_Labels_GW.close()
 
-    return None
 
 
 
-def ReadFiles(data_type1=None, data_type2='both', plot_dist=False):   # plot_dist not being used! 
+
+####################### READING DATA FILES #############################
+########################################################################
+
+def ReadFiles(data_type1, data_type2):
     '''
     Function reads data and creates labels of the results. Returns
     a 2D array with each row representing a point in parameter space.
@@ -68,27 +106,10 @@ def ReadFiles(data_type1=None, data_type2='both', plot_dist=False):   # plot_dis
     '''
 
     # Read parameter values of the training (T), predictive (P) or final (F) data files.
-    if data_type1==0:
-        with open("TDataFile_FreeParam", "r") as f:
-            l1 = f.readlines()
-        with open("TDataFile_Masses", "r") as f:
-            l2 = f.readlines()
-    elif data_type1==1 or data_type==2: 
-        with open("PDataFile_FreeParam", "r") as f:
-            l1 = f.readlines()
-        with open("PDataFile_Masses", "r") as f:
-            l2 = f.readlines()
-    elif data_type1==3:
-        with open("FDataFile_FreeParam", "r") as f:
-            l1 = f.readlines()
-        with open("FDataFile_Masses", "r") as f:
-            l2 = f.readlines()
-    else:
-        print("Raise error here")
-    X = FilterParameters(l1,l2)    # Filter: keep only free parameters
+    free_param_list = ReadFreeParams(data_type1)
 
     # Construct corresponding labels
-    if data_type1==0:       # Training data
+    if data_type1==1:       # Training data
         l_col,l_gw = 0,0    # Temporary values
         if data_type2=='both' or data_type2=='collider':
             with open("TDataFile_Labels", "r") as f:
@@ -97,10 +118,6 @@ def ReadFiles(data_type1=None, data_type2='both', plot_dist=False):   # plot_dis
             with open("TDataFile_Labels_GW", "r") as f:
                 l_gw = f.readlines()
         labels = CreateSingleLabel(l_col, l_gw, data_type2)
-    elif data_type1==1:  # Temporary data used to make predictions w/o labels
-        labels = None
-        data = X
-        return data
     elif data_type1==2:  # Controlled predicted data w labels
         l_col,l_gw = 0,0
         if data_type2=='both' or data_type2=='collider':
@@ -120,26 +137,38 @@ def ReadFiles(data_type1=None, data_type2='both', plot_dist=False):   # plot_dis
                 l_gw = LabelFile_GW.readlines()
         labels = CreateSingleLabel(l_col, l_gw, data_type2)
  
-    data = np.c_[X, labels]
+    data = np.c_[free_param_list, labels]
     return data
 
-def FilterParameters(l1,l2):
-    '''
-    Function takes Lagrangian (l1) and mass (l2) parameter space sampling and
-    returns a parameter space sampling only in terms of the free parameters.
-    '''
 
-    LagParam = np.array([l1[i].split() for i in range(2,len(l1))], dtype=object)
-    LagParam = LagParam.astype(np.float64)
-    LagParam = np.delete(LagParam, [2,3,7,8,11,12], 1)
+def ReadFreeParams(data_type1):
+    """ Read free-parameter values from training (T, data_type1=1), prediction (P, data_type1=2)
+    or final (F, data_type1=3) data files. """
 
-    Masses = np.array([l2[i].split()[1:4] for i in range(2,len(l2))])
-    Masses = Masses.astype(np.float64)
+    if data_type1==1:
+        with open("TDataFile_FreeParam", "r") as f:
+            l = f.readlines()
+    elif data_type==2:
+        with open("PDataFile_FreeParam", "r") as f:
+            l = f.readlines()
+    elif data_type1==3:
+        with open("FDataFile_FreeParam", "r") as f:
+            l = f.readlines()
+    
+    if len(l) <= 3:
+        sys.exit("Erorr: found empty data file when attempting to read. data_type1 = {}".format(data_type1))
 
-    FreeParam = np.c_[LagParam, Masses]
-    return FreeParam
+    free_param_list = np.array([l[i].split() for i in range(2,len(l))], dtype=object)
+    free_param_list = free_param_list.astype(np.float64)                                
+
+    return free_param_list
 
 
+
+
+
+############ CREATING LABELS FOR ANN TRAINING / PLOTTING ###############
+########################################################################
 
 def CreateLabels(l_col, l_gw, data_type2, X=None): # X not used currently
     """ 

@@ -1,10 +1,9 @@
 import numpy as np
 import math
 from scipy.stats import qmc
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 import pandas as pd
 import subprocess
-#import time
 import sys
 
 import io
@@ -14,17 +13,12 @@ import os
 
 from UserInput import *
 from UserInputPaths import *
-from DataHandling import STellipse
+import DataHandling as DH
 sys.path.insert(0, CT_path)
 from LS_TColor_DRPython import LS_TColor, nVevs
 from gwFuns import *
-#start_time = time.time()
 
-def Analysis(in_param_list, mass_list, training_data, optimize=False): # Remove mass_list input
-
-    if len(in_param_list) != num_in_param:
-        print("Number of free parameters does not match given input parameters. \nExiting code!")
-        sys.exit()
+def AnalysisCollider(in_param_list, training_data, optimize=False):
 
     # Find MINPAR block in LesHouches file
     InputFile = open(LesHouches_path, "r")
@@ -39,36 +33,36 @@ def Analysis(in_param_list, mass_list, training_data, optimize=False): # Remove 
     InputFile.writelines(l)
     InputFile.close()
 
-    # Run/read HEP packages
-    RunSPheno(model)
+    # Try running HEP packages
     try:
+        RunSPheno(model)
         spheno_output1, spheno_output2, spheno_output3 = ReadSPheno() #SPO1 not used!
-        real_masses = 1
-
         RunHiggsBounds()
         higgsbounds_output = ReadHiggsBounds()
         RunHiggsSignals()
         higgssignals_output = ReadHiggsSignals()
 
+        successful_run = 1
+        
     except Exception as e: #Fix! Cannot be written into data file
-        print("Not valid parameters, next iteration!")
-        spheno_output1 = ['Negative mass square(s)']
-        spheno_output2 = ['X', 'X', 'X'] # Fix!
-        spheno_output3 = ['X']
-        real_masses = 0
-        higgsbounds_output = 'X'
-        higgssignals_output = ['X','X','X']
-
+        print("HEP packages did not run as expected!")
         print("exception:", e)
 
+        spheno_output2 = [0, 0, 0] # Fix!
+        spheno_output3 = [0]
+        higgsbounds_output = 0
+        higgssignals_output = [0,0,0]
+
+        successful_run = 0
+
     # Write label into data file
-    WriteLabels(real_masses, spheno_output2, spheno_output3, higgsbounds_output, higgssignals_output, training_data)
+    DH.WriteLabelsCol(successful_run, spheno_output2, spheno_output3, higgsbounds_output, higgssignals_output, training_data)
     
     # Check label. Only needed if we want to optimize code
     passed_collider_constr = True
     if optimize:
         spheno_output2 = list(map(float, spheno_output2))
-        label_ST = 1 if STellipse(S=spheno_output2[1], T=spheno_output2[0]) <= 1 else 0
+        label_ST = 1 if DH.STellipse(S=spheno_output2[1], T=spheno_output2[0]) <= 1 else 0
         label_U = float(spheno_output3)
         label_HB = float(higgsbounds_output)
         label_HS = 1 if float(higgssignals_output[2])<pvalue_threshold else 0 #2nd element is the p-value
@@ -142,7 +136,7 @@ def AnalysisCosmic(in_param_list, training_data):
     
     finally:
         try:
-            WriteLabelsGW(transition_order, alphaa, betaa, fpeak, ompeak, STTn, STTp, dSTdTTn, dSTdTTp, Tc, Tn, Tp, low_vev, high_vev, dV, dVdT, action, training_data)
+            DH.WriteLabelsGW(transition_order, alphaa, betaa, fpeak, ompeak, STTn, STTp, dSTdTTn, dSTdTTp, Tc, Tn, Tp, low_vev, high_vev, dV, dVdT, action, training_data)
         except:
             print("The new try block is working as expected!")
             alphaa, betaa = 0, 0
@@ -153,7 +147,7 @@ def AnalysisCosmic(in_param_list, training_data):
             dV, dVdT = 0, 0
             action = 0
             transition_order = 99
-            WriteLabelsGW(transition_order, alphaa, betaa, fpeak, ompeak, STTn, STTp, dSTdTTn, dSTdTTp, Tc, Tn, Tp, low_vev, high_vev, dV, dVdT, action, training_data)
+            DH.WriteLabelsGW(transition_order, alphaa, betaa, fpeak, ompeak, STTn, STTp, dSTdTTn, dSTdTTp, Tc, Tn, Tp, low_vev, high_vev, dV, dVdT, action, training_data)
     return None
 
 
@@ -217,7 +211,6 @@ def ReadSPheno():
 
     index3 = [idx for idx, s in enumerate(l) if 'Block TREELEVELUNITARITY' in s][0]
     spheno_output3 = l[index3+1].split()[1]
-    #spheno_output3 = "99"
 
     OutputFile.close()
     return spheno_output1, spheno_output2, spheno_output3
@@ -270,51 +263,3 @@ def RunCosmoTransitions(params):
     return m
 
 
-def WriteParam(in_param_list, training_data):
-    if training_data:
-        DataFile_FreeParam = open("TDataFile_FreeParam", "a") # Fix!
-    else:
-        DataFile_FreeParam = open("PDataFile_FreeParam", "a") # Fix!
-    for i in range(num_in_param):
-        DataFile_FreeParam.writelines(f'{round(in_param_list[i],5):<{20}}')
-    DataFile_FreeParam.writelines('\n')
-    DataFile_FreeParam.close()
-
-
-def WriteMasses(mass_list, training_data):
-    if training_data:
-        DataFile_Masses = open("TDataFile_Masses", "a")
-    else:
-        DataFile_Masses = open("PDataFile_Masses", "a")
-    for i in range(len(mass_list)):
-        DataFile_Masses.writelines(f'{round(mass_list[i],7):<{20}}')
-    DataFile_Masses.writelines('\n')
-    DataFile_Masses.close()
-
-
-def WriteLabels(real_masses, spheno_output2, spheno_output3, higgsbounds_output, higgssignals_output, training_data):
-    if training_data:
-        DataFile_Labels = open("TDataFile_Labels", "a")
-    else:
-        DataFile_Labels = open("PDataFile_Labels", "a")
-    for i in range(3):
-        DataFile_Labels.writelines(f'{spheno_output2[i]:<{20}}')
-    DataFile_Labels.writelines(f'{spheno_output3:<{20}} {higgsbounds_output:<{20}} {higgssignals_output[0]:<{20}} {higgssignals_output[1]:<{20}} {higgssignals_output[2]:<{20}} {real_masses:<{20}} \n')
-    DataFile_Labels.close()
-
-def WriteLabelsGW(transition_order, alpha, beta, fpeak, ompeak, STTn, STTp, dSTdTTn, dSTdTTp, Tc, Tn, Tp, low_vev, high_vev, dV, dVdT, action, training_data):
-    if training_data:
-        DataFile_Labels_GW = open("TDataFile_Labels_GW", "a")
-    else:
-        DataFile_Labels_GW = open("PDataFile_Labels_GW", "a") 
-    DataFile_Labels_GW.writelines(f'{transition_order:<{20}} {alpha:<{20}} {beta:<{20}} {fpeak:<{20}} {ompeak:<{20}} {STTn:<{20}} {STTp:<{20}} {dSTdTTn:<{20}} {dSTdTTp:<{20}} {Tc:<{20}} {Tn:<{20}} {Tp:<{20}} {low_vev:<{20}} {high_vev:<{20}} {dV:<{20}} {dVdT:<{20}} {action:<{20}} \n')
-    DataFile_Labels_GW.close()
-
-def WritePredictions(predictions): #Not being used!
-    DataFile_Labels = open("PDataFile_Labels", "a")
-    for pred in predictions:
-        DataFile_Labels.writelines(f'{pred} \n')
-    DataFile_Labels.close()
-
-
-#print("The script took {} seconds to run".format(time.time()-start_time))

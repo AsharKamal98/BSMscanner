@@ -348,7 +348,7 @@ def NormalizeInput(X, new_scheme=True, mean=None, std=None):
 
 
 
-def TrainANN(read_data, under_sample=None, over_sample=None, load_network=False, train_network=True, save_network=True):
+def TrainANN(data_type2, under_sample=None, over_sample=None, load_network=False, train_network=True, save_network=True):
 
     if load_network:
         model = tf.keras.models.load_model("Trained_Model/Model")
@@ -367,7 +367,7 @@ def TrainANN(read_data, under_sample=None, over_sample=None, load_network=False,
         print("Network architecture")
         print(model.summary())
     
-        data = ReadFiles(data_type=0, read_data=read_data, plot_dist=False)
+        data = ReadFiles(data_type=1, data_type2=data_type2, plot_dist=False)
         X = data[:,:10]
         X_norm, norm_var = NormalizeInput(X, new_scheme=True, mean=None, std=None)
         y = data[:,10]
@@ -417,8 +417,7 @@ def Predict():
     norm_var = np.load("Trained_Model/NormVariables.npy")
     mean, std = norm_var[0], norm_var[1]
 
-    data = ReadFiles(data_type=1, read_data=None, plot_dist=False)
-    X = data[:,:10]
+    X = DataHandling.ReadFreeParams(data_type1=2)
     X_norm = NormalizeInput(X, new_scheme=False, mean=mean, std=std)
 
     print("\nNetwork is making predictions")

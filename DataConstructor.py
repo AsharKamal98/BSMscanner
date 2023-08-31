@@ -4,7 +4,7 @@ from scipy.stats import qmc
 import matplotlib.pyplot as plt
 import pandas as pd
 import subprocess
-import time
+#import time
 import sys
 
 import io
@@ -14,7 +14,7 @@ import os
 
 from UserInput import *
 from UserInputPaths import *
-from Network import STellipse
+from DataHandling import STellipse
 sys.path.insert(0, CT_path)
 from LS_TColor_DRPython import LS_TColor, nVevs
 from gwFuns import *
@@ -157,49 +157,23 @@ def AnalysisCosmic(in_param_list, training_data):
     return None
 
 
-def InitializeDataFiles(training_data): #Fix! Turn training data to int
-    if training_data:
-        DataFile_FreeParam = open("TDataFile_FreeParam", "w")
-        DataFile_Labels = open("TDataFile_Labels", "w")
-        DataFile_Masses = open("TDataFile_Masses", "w")
-        DataFile_Labels_GW = open("TDataFile_Labels_GW", "w")
-
-    else:
-        DataFile_FreeParam = open("PDataFile_FreeParam", "w")
-        DataFile_Labels = open("PDataFile_Labels", "w")
-        DataFile_Masses = open("PDataFile_Masses", "w")
-        DataFile_Labels_GW = open("PDataFile_Labels_GW", "w")
-
-    #if pos_data:
-    #    DataFile_FreeParam = open("FDataFile_FreeParam", "w")
-    #    DataFile_Labels = open("FDataFile_Labels", "w")
-    #    DataFile_Masses = open("FDataFile_Masses", "w")
-    #    DataFile_Labels_GW = open("FDataFile_Labels_GW", "w")
-
-    DataFile_FreeParam.write(f'{"INPUT PARAMETERS / PATTERNS"} \n')
-    #free_param_list = df_free2['Parameter name'].tolist()
-    Lag_param_list = df_L['Parameter name'].tolist()
-    for string in Lag_param_list:
-        DataFile_FreeParam.write(f'{string:<{20}}')
-    DataFile_FreeParam.write('\n')
-    DataFile_FreeParam.close()
-
-    DataFile_Labels.writelines(f'{"LABELS / OUTPUT"} \n')
-    DataFile_Labels.writelines(f'{"T parameter":<{19}} {"S parameter":<{19}} {"U parameter":<{19}} {"Unitarity":<{19}} {"HB Result":<{19}} {"HS chi^2(mu)":<{19}} {"HS chi^2(mh)":<{19}} {"HS p-value":<{19}} {"Real masses":<{19}} \n')
-    DataFile_Labels.close()
-
-    DataFile_Masses.writelines(f'{"PARTICLE MASSES"} \n {"mH":<{20}} {"mN1":<{20}} {"mN2":<{20}} {"mC":<{20}} \n')
-    DataFile_Masses.close()   # Fix! Generalize
-
-    DataFile_Labels_GW.writelines(f'{"GRAVITATIONAL WAVE OBSERVABLES"} \n{"PT order":<{20}} {"alpha":<{20}} {"beta":<{20}} {"fpeak":<{20}} {"ompeak":<{20}} {"STTn":<{20}} {"STTp":<{20}} {"dSTdTTn":<{20}} {"dSTdTTp":<{20}} {"Tc":<{20}} {"Tn":<{20}} {"Tp":<{20}} {"low_vev":<{20}} {"high_vev":<{20}} {"dV":<{20}} {"dVdT":<{20}}  {"action":<{20}} \n')
-    DataFile_Labels_GW.close()
-
-    return None
-
-
 def Sampling(exp_num_points, sampling_method):
+    """
+    Sample parameter space spanned by the free parameters using Sobol sequences.
+    Two sampling methods.
+    INPUT:
+    -----
+        int exp_num_points: sample 2**(exp_num_points) in parameter space.
+        int sampling_method: 1 will perform a new sampling.
+                             2 will take samples written in  a data file. Useful
+                             if several processes are gathering data and sampling
+                             is pre-distributed for each process.
+    """
+
     if sampling_method==1:
+        # Find intervals of free parameters
         free_param_range = df_free2[['Range start', 'Range end']].to_numpy()
+        # Perform sampling
         sampler = qmc.Sobol(d=num_free_param)
         sample = sampler.random_base2(m=exp_num_points)
         input_samples = qmc.scale(sample, free_param_range[:,0], free_param_range[:,1])

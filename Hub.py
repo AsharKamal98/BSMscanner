@@ -1,8 +1,10 @@
 import DataConstructor as DC
-import cmath
+import DataHandling
 import Network
 from UserInput import *
 from UserInputPaths import *
+
+import cmath
 from tqdm import tqdm
 import subprocess
 
@@ -37,7 +39,7 @@ def SearchGrid(construct_collider_data=True, construct_cosmic_data=True, keep_ol
     #------------CONSTRUCT COLLIDER TRAINING DATA FOR NETWORK----------------
     if construct_collider_data or construct_cosmic_data:
         if not keep_old_trn_data:
-            DC.InitializeDataFiles(training_data=True)
+            DataHandling.InitializeDataFiles(training_data=True)
         training_samples = DC.Sampling(exp_num_training_points, sampling_method)
 
         print("\nConstructing training data")
@@ -70,7 +72,7 @@ def SearchGrid(construct_collider_data=True, construct_cosmic_data=True, keep_ol
                     action = 0
                     DC.WriteLabelsGW(transition_order, alphaa, betaa, fpeak, ompeak, STTn, STTp, dSTdTTn, dSTdTTp, Tc, Tn, Tp, low_vev, high_vev, dV, dVdT, action, training_data=True)
 
-        data = Network.ReadFiles(data_type=0, read_data=read_data)
+        data = DataHandling.ReadFiles(data_type1=0, data_type2=read_data)
         #Network.PlotData(data[:,:10], data[:,10], "TrainPlot")
 
 
@@ -81,7 +83,7 @@ def SearchGrid(construct_collider_data=True, construct_cosmic_data=True, keep_ol
 
     #------------TRAINED NETWORK MAKES PREDICTIONS----------------
     if network_predicts:
-        DC.InitializeDataFiles(training_data=False)
+        DataHandling.InitializeDataFiles(training_data=False)
         pred_samples = DC.Sampling(exp_num_pred_points, sampling_method=sampling_method)
         
         # Construct input data
@@ -106,7 +108,7 @@ def SearchGrid(construct_collider_data=True, construct_cosmic_data=True, keep_ol
                 l1 = np.array(f.readlines())
             with open("PDataFile_Masses", "r") as f:
                 l2 = np.array(f.readlines())
-            DC.InitializeDataFiles(training_data=False)
+            DataHandling.InitializeDataFiles(training_data=False)
 
             #with open("PDataFile_FreeParam", "a") as f:
             #    f.writelines(l1[pos_prediction_indicies+2])
@@ -149,7 +151,7 @@ def SearchGrid(construct_collider_data=True, construct_cosmic_data=True, keep_ol
 
 
             # Read controlled points. Find indicies of positive points.
-            data = Network.ReadFiles(data_type=2, read_data=read_data)
+            data = DataHandling.ReadFiles(data_type1=2, data_type2=read_data)
             labels = np.array(data[:,10])
             pos_points_indicies = np.where(labels==1)[0]
             pos_points_indicies = np.insert(pos_points_indicies, 0, [-2,-1]) #Insert two zeros at beginning
@@ -174,7 +176,7 @@ def SearchGrid(construct_collider_data=True, construct_cosmic_data=True, keep_ol
                 with open("FDataFile_Labels_GW", "w") as f:
                     f.writelines(l[pos_points_indicies+2])
 
-            data = Network.ReadFiles(data_type=3, read_data=read_data)
+            data = DataHandling.ReadFiles(data_type1=3, data_type2=read_data)
             #print("Constructing plot of all accumulated positive points")
             #Network.PlotData(data[:,:10], data[:,10], "FinalPlot", plot_dist=False, read_data=read_data)
         
@@ -184,9 +186,7 @@ def SearchGrid(construct_collider_data=True, construct_cosmic_data=True, keep_ol
     return "Done!"
 
 
-
-
-def EvalFcn(sample): # FIX!
+def EvalFcnNew(sample):
     mC,mN1,mN2 = sample[-3], sample[-2], sample[-1] #Hpm,hh_1,hh_2
     mH = float(df['Range start'][13])
 
@@ -195,6 +195,8 @@ def EvalFcn(sample): # FIX!
     d['lam3'] = 0
     d['lam4'] = 0
     d['mH'] = float(df['Range start'][13])
+
+
     lam8 =(1/v**2) * 2**(3/2) * cmath.sqrt((mC**2)-(mN1**2)) * cmath.sqrt ((mN2**2)-(mC**2))
     if round(lam8.imag,5) > 0:
         return None, None
@@ -214,6 +216,80 @@ def EvalFcn(sample): # FIX!
     in_param_list = [sample[0], sample[1], 0, 0, sample[2], sample[3], sample[4], lam8, lam9, sample[5], sample[6], mT, mS]
     #in_param_list = InParam[i]
     #mass_list = Masses[i]
+
+    return in_param_list, mass_list
+
+
+
+def EvalFcn(sample): # FIX!
+    mC,mN1,mN2 = sample[-3], sample[-2], sample[-1] #Hpm,hh_1,hh_2
+    mH = float(df['Range start'][13])
+
+    dict1 = dict((df_free2['Parameter name'].to_numpy()[i], sample[i]) for i in range(len(df_free2.index))) 
+    dict2 = df_free3.set_index("Parameter name")["Range start"].to_dict()
+    d = dict1 | dict2
+    d['v'] = v
+    d["cmath"] = cmath
+
+    dep_param_names = df_d["Parameter name"].to_numpy()
+    dependicies = df_d["Dependence"].to_numpy()
+    dict3 = dict((dep_param_names[i], eval(dependicies[i], d)) for i in range(len(df_d.index)))
+
+    dep_param_values = list(dict3.values())
+
+
+    #Check complex, negative values
+    #Construct df with LH number.
+    #Apply dict to df
+    #Construct list from df and return
+
+
+    # Specific to TC
+    if round(dep_param_values[0].imag,5) > 0:
+        return None, None
+    else:
+        dict3["lam8"] = dep_param_values[0].real
+    if dep_param_values[2]<0 or dep_param_values[3]<0:
+        return None, None
+
+    d = dict1 | dict2 | dict3
+    d['v'] = v
+
+    df_in = df_L[["Parameter name"]].copy()
+    df_in["Parameter value"] = df_in["Parameter name"].map(d)
+    in_param_list = df_in["Parameter value"].tolist()
+
+
+    df_free = df_free2[["Parameter name"]].copy()
+    df_free["Parameter value"] = df_free["Parameter name"].map(d)
+    free_param_list = df_free["Parameter value"].tolist()
+
+    df_fixedd = df_fixed[["Parameter name"]].copy()
+    df_fixedd["Parameter value"] = df_fixedd["Parameter name"].map(d)
+    fixed_param_list = df_fixedd["Parameter value"].tolist()
+    
+
+    lam8 =(1/v**2) * 2**(3/2) * cmath.sqrt((mC**2)-(mN1**2)) * cmath.sqrt((mN2**2)-(mC**2))
+
+    if round(lam8.imag,5) > 0:
+        return None, None
+    else:
+        lam8 = lam8.real
+
+    lam9 = eval(df['Dependence'][8], d)
+    mT = eval(df['Dependence'][11], d)
+    mS = eval(df['Dependence'][12], d)
+
+
+    #print("REAL PARAMETER CHECK IS TURNED OFF!")
+    if mS<0 or mT<0:
+        return None, None
+    #print("charged", mC, "neutral", mN1,mN2)
+
+    mass_list = [mH,mN1,mN2,mC]
+    #in_param_list = [sample[0], sample[1], 0, 0, sample[2], sample[3], sample[4], lam8, lam9, sample[5], sample[6], mT, mS]
+
+
 
     return in_param_list, mass_list
 

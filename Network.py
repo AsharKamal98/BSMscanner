@@ -1,7 +1,14 @@
+# IMPORT ANN libraries
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
+from collections import Counter
+from sklearn.datasets import make_classification
+from imblearn.over_sampling import SMOTE
+from imblearn.over_sampling import RandomOverSampler
+from imblearn.under_sampling import RandomUnderSampler
 
+# MATH AND OTHER
 import numpy as np
 import math
 import matplotlib.pyplot as plt
@@ -9,257 +16,18 @@ import pickle
 from sklearn.model_selection import train_test_split
 import seaborn as sns
 import pandas as pd
-from operator import itemgetter
+#from operator import itemgetter
 
-from collections import Counter
-from sklearn.datasets import make_classification
-from imblearn.over_sampling import SMOTE
-from imblearn.over_sampling import RandomOverSampler
-from imblearn.under_sampling import RandomUnderSampler
 
+# OTHER SCRIPTS IN FRAMEWORK 
 from UserInput import *
 from UserInputPaths import *
-
-# LaTeX font
-plt.rcParams["text.usetex"] = True
-plt.rcParams["pgf.rcfonts"] = False
-
-import matplotlib as mpl
-mpl.rcParams['font.family'] = 'serif'
-mpl.rcParams['text.usetex'] = True
+import DataHandling 
 
 
-def ReadFiles(data_type=None, read_data='both', plot_dist=False):    
-
-    # Construct free parameters
-    if data_type==0:
-        with open("TDataFile_FreeParam", "r") as f:
-            l1 = f.readlines()
-        with open("TDataFile_Masses", "r") as f:
-            l2 = f.readlines()
-    elif data_type==1 or data_type==2: 
-        with open("PDataFile_FreeParam", "r") as f:
-            l1 = f.readlines()
-        with open("PDataFile_Masses", "r") as f:
-            l2 = f.readlines()
-    elif data_type==3:
-        with open("FDataFile_FreeParam", "r") as f:
-            l1 = f.readlines()
-        with open("FDataFile_Masses", "r") as f:
-            l2 = f.readlines()
-    else:
-        print("Raise error here")
-    X = ReadX(l1,l2)
-
-    # Construct labels
-    if data_type==0:    # Training data
-        l_col,l_gw = 0,0
-        if read_data=='both' or read_data=='collider':
-            with open("TDataFile_Labels", "r") as f:
-                l_col = f.readlines()
-        if read_data=='both' or read_data=='cosmic':
-            with open("TDataFile_Labels_GW", "r") as f:
-                l_gw = f.readlines()
-        labels, X_new = CreateLabels(l_col, l_gw, read_data, plot_dist, X)
-    elif data_type==1:  # Temporary data used to make predictions w/o labels
-        labels = None
-        data = X
-        return data
-    elif data_type==2:  # Controlled predicted data w labels
-        l_col,l_gw = 0,0
-        if read_data=='both' or read_data=='collider':
-            with open("PDataFile_Labels", "r") as LabelFile_Col:
-                l_col = LabelFile_Col.readlines()
-        if read_data=='both' or read_data=='cosmic':
-            with open("PDataFile_Labels_GW", "r") as LabelFile_GW:
-                l_gw = LabelFile_GW.readlines()
-        labels, X_new = CreateLabels(l_col, l_gw, read_data, plot_dist, X, data_type=2)
-    elif data_type==3:  # Final data of good points
-        l_col,l_gw = 0,0
-        if read_data=='both' or read_data=='collider':
-            with open("FDataFile_Labels", "r") as LabelFile_Col:
-                l_col = LabelFile_Col.readlines()
-        if read_data=='both' or read_data=='cosmic':
-            with open("FDataFile_Labels_GW", "r") as LabelFile_GW:
-                l_gw = LabelFile_GW.readlines()
-        labels, X_new = CreateLabels(l_col, l_gw, read_data, plot_dist, X)
- 
-    data = np.c_[X_new, labels]
-    return data
-
-def ReadX(l1,l2):
-    InParam = np.array([l1[i].split() for i in range(2,len(l1))], dtype=object)
-    InParam = InParam.astype(np.float64)
-    InParam = np.delete(InParam, [2,3,7,8,11,12], 1)
-
-    Masses = np.array([l2[i].split()[1:4] for i in range(2,len(l2))])
-    Masses = Masses.astype(np.float64)
-
-    X = np.c_[InParam, Masses]
-    return X
-
-
-
-def CreateLabels(l_col, l_gw, read_data, plot_dist, X=None, data_type=None):    #data_type is temporary input!
-    """ 
-    Given collider and cosmic data, the function creates labels used by the
-    network. '1' = good points, '0' = bad point.
-
-    Input
-    -----
-    l_col : list
-        list of strings containing rows of collider data file
-    l_gw : list
-        list of strings containing rows of cosmic data file
-    read_data : string
-        'cosmic' if labels should be cosmic constraints,
-        'collider' for collider constraints and 'both' for
-        both
-    plot_dist : boolean
-        True = plot only distribution of of bad/good points
-        in free parameters. False = Also plot ...
-
-    Returns
-    -------
-    A list of labels, where elements can be '1' for good points
-    and '0' for bad points.
-
-    """
-
-    #if data_type==2:
-    #    omega_exp = -99
-
-    if read_data=='both' or read_data=='collider':
-        HBS = np.array([itemgetter(4,7)(l_col[i].split()) for i in range(2,len(l_col))])
-        HBS = HBS.astype(np.float64)
-        STU =  np.array([l_col[i].split()[0:3] for i in range(2,len(l_col))])
-        STU = STU.astype(np.float64)
-        ST = STU[:,0:2] # Fix!
-        Unitarity =  np.array([l_col[i].split()[3] for i in range(2,len(l_col))])
-        Unitarity = Unitarity.astype(np.float64)
-
-        labels_HBS = [1 if (item[0]==1 and item[1] < pvalue_threshold) else 0 for item in HBS]
-        labels_ST = [1 if STellipse(item[1],item[0]) <= 1 else 0 for item in ST]
-        labels_Unitarity = [int(item) for item in Unitarity]
-
-        print("Number of points satisfying Unitarity constraints:", np.sum(labels_Unitarity))
-        print("Number of points satisfying S and T param simultaneously:", np.sum(labels_ST))
-        print("Number of points satisfying HiggsBounds and HiggsSignals:", np.sum(labels_HBS))
-
-        labels_col = np.multiply(np.multiply(labels_HBS, labels_ST), labels_Unitarity)
-        print("Number of points satisfying collider constraints:", np.sum(labels_col))
-
-    if read_data=='both' or read_data=='cosmic':
-        PTO = np.array([l_gw[i].split()[0] for i in range(2,len(l_gw))])
-        PTO = PTO.astype(np.float64)
-        omega = np.array([l_gw[i].split()[4] for i in range(2,len(l_gw))])
-        omega = omega.astype(np.float64)
-        low_vev = np.array([l_gw[i].split()[12] for i in range(2,len(l_gw))])
-        low_vev = low_vev.astype(np.float64)
-        high_vev = np.array([l_gw[i].split()[13] for i in range(2,len(l_gw))])
-        high_vev = high_vev.astype(np.float64)
-        Tn = np.array([l_gw[i].split()[10] for i in range(2,len(l_gw))])
-        Tn = Tn.astype(np.float64)
-        strong = (high_vev-low_vev)/Tn
-
-        labels_PTO = [1 if item == 1 else 0 for item in PTO]
-        labels_omega = [1 if item>10**(omega_exp) else 0 for item in omega]
-        #labels_strong = [1 if (high_vev[i]-low_vev[i])/Tn[i] > 1 else 0 for i in range(len(Tn))]
-        labels_strong = [1 if abs(item)>1 else 0 for item in strong]
-
-        print("Number of points giving first-order phase transitions", np.sum(labels_PTO))
-        print("Number of points giving detectable first-order phase transitions", np.sum(labels_omega))
-        print("Number of points giving strong first-order phase transitions", np.sum(labels_strong))
-
-        labels_GW = np.multiply(np.multiply(labels_PTO, labels_omega), labels_strong)
-        print("Number of points satisfying cosmic constraints", np.sum(labels_GW))
-
-
-
-    if read_data=='both':
-        if plot_dist:
-            return "Distribution plots for collider and cosmic constraints not ready yet"
-        else: # Fix!
-            labels = np.multiply(labels_col,labels_GW)
-            #X_new = X
-
-            #X_new=[]
-            # This points where CosmoTransitions or GwFunc codes crashed
-            bad_indicies = np.where((np.array(labels_PTO) == -1) | (np.array(labels_PTO) == 99))[0]
-            labels = [element for index, element in enumerate(labels) if index not in bad_indicies]
-            X_new = [element for index, element in enumerate(X) if index not in bad_indicies]
-
-
-    if read_data=='collider': 
-        if plot_dist:
-            #labels = (np.zeros(len(labels_Unitarity))).tolist()
-            X_new=[]
-            labels=[]
-
-            for i in range(len(labels_Unitarity)):
-                if labels_Unitarity[i]==1:
-                    labels.append("U")
-                    X_new.append(X[i])
-                if labels_HBS[i]==1:
-                    labels.append("H")
-                    X_new.append(X[i])
-                if labels_ST[i]==1:
-                    labels.append("STU")
-                    X_new.append(X[i])
-                labels.append("BG")
-                X_new.append(X[i])
-        else:
-            labels = labels_col
-            X_new = X
-
-    if read_data=='cosmic':
-        if plot_dist:
-            X_new=[]
-            labels=[]
-            for i in range(len(labels_PTO)):
-                if labels_PTO[i]==1:
-                    labels.append("FOPT")
-                    X_new.append(X[i])
-                if labels_strong[i]==1:
-                    labels.append("S-FOPT")
-                    X_new.append(X[i])
-                if labels_omega[i]==1:
-                    labels.append("D-FOPT")
-                    X_new.append(X[i])
-                labels.append("BG")
-                X_new.append(X[i])
-        else: # Has some bugs!
-            labels = labels_GW
-            #X_new=[]
-            #labels=[]
-            bad_indicies = np.where((np.array(labels_PTO) == -1 | np.array(labels_PTO) == 99))
-            labels = [element for index, element in enumerate(labels) if index not in bad_indicies]
-            X_new = [element for index, element in enumerate(X) if index not in bad_indicies]
-
-
-
-    if not plot_dist:
-        print("Number of points in positive class:", sum(labels), "and in negative class:", len(labels)-sum(labels), "\n")
-
-
-    return labels, X_new #np.multiply(labels_HBS, labels_ST), X_new
-
-def STellipse(S,T):
-    """
-    parameterizes the ellipse defined on the (oblique parameter)
-    ST-plane by PDG. Returns a float. If float smaller than 1,
-    the point is within the ST ellipse.
-    """
-    T_tilde = T-0.05
-    theta = 0.595
-    a = 0.1458
-    b = 0.0437
-    return ((S*np.cos(theta)+T_tilde*np.sin(theta))/a)**2 + ((T_tilde*np.cos(theta)-S*np.sin(theta))/b)**2
-
-
-
+"""
 def PlotData(X, y, fig_name, plot_dist=False, read_data='both'):
-    """
+    '''
     Plots data.
     input
     -----
@@ -272,7 +40,7 @@ def PlotData(X, y, fig_name, plot_dist=False, read_data='both'):
         Name of figure. Currently only relevant for plot_dist==False
     read_data : string
         'both', 'cosmic' or 'collider. Currently only relevant for plot_dist==True
-    """
+    '''
     data = np.c_[X,y]
     #df = pd.DataFrame(data, columns=["$\\Lambda_1$", '\Lambda_2', '\lambda_1', '\lambda_2', '\lambda_3','\lambda_6', '\lambda_7', 'm_{\mathrm{N}_1}', 'm_{\mathrm{N}_2}', 'm_{\mathrm{C}}', 'Constraints'])
     df = pd.DataFrame(data, columns=["$\\Lambda_1$", '$\\Lambda_2$', '$\\lambda_1$', '$\\lambda_2$', '$\\lambda_3$','$\\lambda_6$', '$\\lambda_7$', '$m_{\\mathrm{N}_1}$', '$m_{\\mathrm{N}_2}$', '$m_{\\mathrm{C}}$', 'Constraints'])
@@ -405,7 +173,7 @@ def SpecialPlot(X, y, fig_name):
 
     plt.savefig('{}.png'.format(fig_name))
 
-
+"""
 
 def Boosting(X, y, under_sample=None, over_sample=None):
     counter = Counter(y)

@@ -3,12 +3,12 @@ import pandas as pd
 
 #=============================================================== USER INPUT ========================================================
 model = "TSM"
-v = 246 # Fix! Read from LH
+v = 246 # Fix! Read from LH. Also do not use in dataframe input
 num_in_param = 13  # Fix! Can be found from df
 num_free_param = 10  # Fix!
 num_h = 2
 num_hp = 3
-exp_num_training_points = 4 #18=22h, 9=24-36hh
+exp_num_training_points = 3 #18=22h, 9=24-36hh
 num_training_points = 2**(exp_num_training_points)
 exp_num_pred_points = 6
 num_pred_points = 2**(exp_num_pred_points)
@@ -19,8 +19,10 @@ d = { \
     'LesHouches number': [1,2,3,4,5,6,7,8,9,10,11,12,13,None,None,None,None], \
     'Range start' : [-5000, -5000, 0, 0, -3.5, -7.5, -13, None, None, -7, -3.5, None, None, 125.25, 200, 200, 200], \
     'Range end' : [5000, 5000, 0, 0, 3.5, 7.5, 13, None, None, -2.5, 3.5, None, None, 125.25, 550, 1000, 1000], \
-    'Dependence' :[None, None, None, None, None, None, None, '(1/v**2) * 2**(3/2) * ((mC**2)-(mN1**2))**(1/2) * ((mN2**2)-(mC**2))**(1/2)', 'mH**2/(2*v**2)', None, None, '(1/4) * (2*mC**2 - lam10*v**2)', '(1/2) * (mN1**2 + mN2**2 - mC**2 - lam7*v**2)', None, None, None, None] \
+    'Dependence' :[None, None, None, None, None, None, None, '(1/v**2) * 2**(3/2) * cmath.sqrt((mC**2)-(mN1**2)) * cmath.sqrt((mN2**2)-(mC**2))', 'mH**2/(2*v**2)', None, None, '(1/4) * (2*mC**2 - lam10*v**2)', '(1/2) * (mN1**2 + mN2**2 - mC**2 - lam7*v**2)', None, None, None, None] \
     }
+
+
 df = pd.DataFrame(data=d)
 
 #=============================================================== PATHS ========================================================
@@ -50,9 +52,19 @@ network_epochs=500
 
 
 #============================================================ TEMPORARY =========================================================
-df_free1 = df[~df['Range start'].isna()] # Data frame of free parameters
-df_free2 = df_free1[df_free1['Range start'] != df_free1['Range end']] # Data frame of actual free parameters
-df_L = df[~df['LesHouches number'].isna()] # Data frame of Lagrangian parameters (excluding muH)
+df_free1 = df[~df['Range start'].isna()] # Data frame of free parameters after parameter space inversion
+df_free2 = df_free1[df_free1['Range start'] != df_free1['Range end']] # Data frame of free parameters, which have interval size non-zero
+
+df_fixed = df[df['Range start'].isna() | (df['Range start'] == df['Range end'])]
+
+df_free3 = df_free1[df_free1['Range start'] == df_free1['Range end']] # Data frame of free parameters, which have interval size zero
+
+df_d = df[~df["Dependence"].isna()]
+
+df_L = df[~df['LesHouches number'].isna()] # Data frame of parameters (excluding muH) used in LesHouches
+df_L1 = df_L[~df_L['Dependence'].isna()]
+df_L2 = df_L[df_L['Dependence'].isna()]
+
 
 pvalue_threshold = 0.05
 S_threshold = [-0.02, 0.10]

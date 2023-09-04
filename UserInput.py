@@ -1,7 +1,9 @@
 import numpy as np
 import pandas as pd
+import cmath
 
-#=============================================================== USER INPUT ========================================================
+################################################################ USET INPUT ########################################################
+#===================================================================================================================================
 model = "TSM"
 v = 246 # Fix! Read from LH. Also do not use in dataframe input
 num_in_param = 13  # Fix! Can be found from df
@@ -23,48 +25,16 @@ d = { \
     }
 
 
-df = pd.DataFrame(data=d)
 
-#=============================================================== PATHS ========================================================
-#LesHouches_path = "/home/etlar/m22_ashar/.Mathematica/Applications/SPheno-4.0.5/LesHouches.in.{}".format(model)
-#SPheno_spc_path = "/home/etlar/m22_ashar/.Mathematica/Applications/SPheno-4.0.5/SPheno.spc.{}".format(model)
 
-#HB_script_path = "/home/etlar/m22_ashar/.Mathematica/Applications/higgsbounds-5.10.2/build/RunHiggsBounds.sh"
-#HB_path = "/home/etlar/m22_ashar/.Mathematica/Applications/higgsbounds-5.10.2/build"
-#HB_output_path = "/home/etlar/m22_ashar/.Mathematica/Applications/SPheno-4.0.5/HiggsBounds_results.dat"
 
-#HS_script_path = "/home/etlar/m22_ashar/.Mathematica/Applications/higgssignals-2.6.2/build/RunHiggsSignals.sh"
-#HS_path = "/home/etlar/m22_ashar/.Mathematica/Applications/higgssignals-2.6.2/build"
-#HS_output_path = "/home/etlar/m22_ashar/.Mathematica/Applications/SPheno-4.0.5/HiggsSignals_results.dat"
 
-#CT_directory_path = "/home/etlar/m22_ashar/.Mathematica/Applications/DRalgo-1.0.2-beta/examples"
-#CT_infile_name = "LS_TColor_DRPython" #Remove .py
-#CT_class_name = "LS_TColor"
-#==============================================================================================================================
-#==============================================================================================================================
-#==============================================================================================================================
 #                                                     EVERYTHING BELOW IS OPTIONAL
 
-
-#========================================================== NETWORK INPUT =======================================================
-network_verbose=True
+########################################################### NETWORK INPUT #######################################################
+#================================================================================================================================
+network_verbose=False
 network_epochs=500
-
-
-#============================================================ TEMPORARY =========================================================
-df_free1 = df[~df['Range start'].isna()] # Data frame of free parameters after parameter space inversion
-df_free2 = df_free1[df_free1['Range start'] != df_free1['Range end']] # Data frame of free parameters, which have interval size non-zero
-
-df_fixed = df[df['Range start'].isna() | (df['Range start'] == df['Range end'])]
-
-df_free3 = df_free1[df_free1['Range start'] == df_free1['Range end']] # Data frame of free parameters, which have interval size zero
-
-df_d = df[~df["Dependence"].isna()]
-
-df_L = df[~df['LesHouches number'].isna()] # Data frame of parameters (excluding muH) used in LesHouches
-df_L1 = df_L[~df_L['Dependence'].isna()]
-df_L2 = df_L[df_L['Dependence'].isna()]
-
 
 pvalue_threshold = 0.05
 S_threshold = [-0.02, 0.10]
@@ -72,5 +42,39 @@ T_threshold = [0.03, 0.12]
 U_threshold = [0.01, 0.11]
 omega_exp=-16
 
-#'Range start' : [-5000, -5000, 0, 0, -15, -15, -15, None, None, -15, -15, None, None, 125.25, 200, 200, 200], \
-#'Range end' : [5000, 5000, 0, 0, 15, 15, 15, None, None, 15, 15, None, None, 125.25, 1000, 1000, 1000], \
+
+
+
+
+#################################################### Pandas Data Frames ########################################################
+#================================================================================================================================
+import sys
+
+# Create data fran of user input data
+df = pd.DataFrame(data=d)
+
+# Free parameters spanning parameter space for sampling
+df_free_param = df[(~df["Range start"].isna()) & (df["Range start"] != df["Range end"])]
+free_param_names = df_free_param["Parameter name"].to_numpy()
+free_param_ranges = df_free_param[["Range start", "Range end"]].to_numpy()
+series_free_param = df_free_param["Parameter name"]
+
+# First set of fixed variables: variables fixed at a constant value
+df_fixed_param1 = df[(~df["Range start"].isna()) & (df["Range start"] == df["Range end"])]
+dict_fixed_param1 = df_fixed_param1.set_index("Parameter name")["Range start"].to_dict()
+dict_fixed_param1["cmath"] = cmath
+dict_fixed_param1["v"] = v
+
+# Second set of fixed variables: variable values fixed by the free variable values
+df_fixed_param2 = df[df["Range start"].isna()]
+fixed_param2_names = df_fixed_param2["Parameter name"].to_numpy()
+fixed_param2_dependicies = df_fixed_param2["Dependence"].to_numpy()
+
+# Combining data frames for fixed variables
+df_fixed_param = pd.concat([df_fixed_param1, df_fixed_param2], axis=0)
+series_fixed_param = df_fixed_param["Parameter name"]
+
+# Input parameters to SPheno (LesHouches). Different from free parameters.
+df_in_param = df[~df["LesHouches number"].isna()]
+series_in_param = df_in_param["Parameter name"]
+

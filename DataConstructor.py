@@ -18,7 +18,7 @@ sys.path.insert(0, CT_path)
 from LS_TColor_DRPython import LS_TColor, nVevs
 from gwFuns import *
 
-def AnalysisCollider(in_param_list, training_data, optimize=False):
+def AnalysisCollider(in_param_list, data_type1, optimize=False):
 
     # Find MINPAR block in LesHouches file
     InputFile = open(LesHouches_path, "r")
@@ -44,7 +44,7 @@ def AnalysisCollider(in_param_list, training_data, optimize=False):
 
         successful_run = 1
         
-    except Exception as e: #Fix! Cannot be written into data file
+    except Exception as e:
         print("HEP packages did not run as expected!")
         print("exception:", e)
 
@@ -52,27 +52,21 @@ def AnalysisCollider(in_param_list, training_data, optimize=False):
         spheno_output3 = [0]
         higgsbounds_output = 0
         higgssignals_output = [0,0,0]
-
         successful_run = 0
 
     # Write label into data file
-    DH.WriteLabelsCol(successful_run, spheno_output2, spheno_output3, higgsbounds_output, higgssignals_output, training_data)
+    DH.WriteLabelsCol(successful_run, spheno_output2, spheno_output3, higgsbounds_output, higgssignals_output, data_type1)
     
     # Check label. Only needed if we want to optimize code
-    passed_collider_constr = True
     if optimize:
-        spheno_output2 = list(map(float, spheno_output2))
-        label_ST = 1 if DH.STellipse(S=spheno_output2[1], T=spheno_output2[0]) <= 1 else 0
-        label_U = float(spheno_output3)
-        label_HB = float(higgsbounds_output)
-        label_HS = 1 if float(higgssignals_output[2])<pvalue_threshold else 0 #2nd element is the p-value
-        label = label_ST * label_HB * label_HS * label_U
-        passed_collider_constr = True if label==1 else False
+        passed_collider_constr = DH.CheckCollConstr
+    else:
+        passed_collider_constr = True
 
     return passed_collider_constr
 
 
-def AnalysisCosmic(in_param_list, training_data):
+def AnalysisCosmic(in_param_list, data_type1):
     print("RUNNING COSMIC ANALYSIS --------------------------------------------------------------------------------------------")
     print(in_param_list)
 
@@ -136,7 +130,7 @@ def AnalysisCosmic(in_param_list, training_data):
     
     finally:
         try:
-            DH.WriteLabelsGW(transition_order, alphaa, betaa, fpeak, ompeak, STTn, STTp, dSTdTTn, dSTdTTp, Tc, Tn, Tp, low_vev, high_vev, dV, dVdT, action, training_data)
+            DH.WriteLabelsGW(transition_order, alphaa, betaa, fpeak, ompeak, STTn, STTp, dSTdTTn, dSTdTTp, Tc, Tn, Tp, low_vev, high_vev, dV, dVdT, action, data_type1)
         except:
             print("The new try block is working as expected!")
             alphaa, betaa = 0, 0
@@ -147,7 +141,7 @@ def AnalysisCosmic(in_param_list, training_data):
             dV, dVdT = 0, 0
             action = 0
             transition_order = 99
-            DH.WriteLabelsGW(transition_order, alphaa, betaa, fpeak, ompeak, STTn, STTp, dSTdTTn, dSTdTTp, Tc, Tn, Tp, low_vev, high_vev, dV, dVdT, action, training_data)
+            DH.WriteLabelsGW(transition_order, alphaa, betaa, fpeak, ompeak, STTn, STTp, dSTdTTn, dSTdTTp, Tc, Tn, Tp, low_vev, high_vev, dV, dVdT, action, data_type1)
     return None
 
 
@@ -165,12 +159,9 @@ def Sampling(exp_num_points, sampling_method):
     """
 
     if sampling_method==1:
-        # Find intervals of free parameters
-        free_param_range = df_free2[['Range start', 'Range end']].to_numpy()
-        # Perform sampling
         sampler = qmc.Sobol(d=num_free_param)
         sample = sampler.random_base2(m=exp_num_points)
-        input_samples = qmc.scale(sample, free_param_range[:,0], free_param_range[:,1])
+        input_samples = qmc.scale(sample, free_param_ranges[:,0], free_param_ranges[:,1])
     elif sampling_method==2:
         with open("InDataFile", "r") as f:
             l = f.readlines()

@@ -2,6 +2,7 @@ import numpy as np
 from operator import itemgetter
 from functools import reduce
 import sys
+import subprocess
 
 from UserInput import *
 
@@ -12,18 +13,20 @@ from UserInput import *
 
 prefixes = ["T","P","F"]
 def InitializeDataFiles(data_type1):
-    prefix = prefixes[data_type1]
+    subprocess.run(["mkdir", "-p", "DataFiles"]) 
 
-    with open("{}DataFile_FreeParam".format(prefix), "w") as f:
+    prefix = prefixes[data_type1-1]
+
+    with open("DataFiles/{}DataFile_FreeParam".format(prefix), "w") as f:
         f.write(f'{"FREE PARAMETERS"} \n TEMP \n')
 
-    with open("{}DataFile_FixedParam".format(prefix), "w") as f:
+    with open("DataFiles/{}DataFile_FixedParam".format(prefix), "w") as f:
         f.writelines(f'{"FIXED PARAMETERS"} \n TEMP \n')
 
-    with open("{}DataFile_Labels_Col".format(prefix), "w") as f:
+    with open("DataFiles/{}DataFile_Labels_Col".format(prefix), "w") as f:
         f.writelines(f'{"COLLIDER OBSERVABLES"} \n{"T parameter":<{19}} {"S parameter":<{19}} {"U parameter":<{19}} {"Unitarity":<{19}} {"HB Result":<{19}} {"HS chi^2(mu)":<{19}} {"HS chi^2(mh)":<{19}} {"HS p-value":<{19}} {"Successful run":<{19}} \n')
 
-    with open("{}DataFile_Labels_GW".format(prefix), "w") as f:
+    with open("DataFiles/{}DataFile_Labels_GW".format(prefix), "w") as f:
         f.writelines(f'{"GRAVITATIONAL WAVE OBSERVABLES"} \n{"PT order":<{20}} {"alpha":<{20}} {"beta":<{20}} {"fpeak":<{20}} {"ompeak":<{20}} {"STTn":<{20}} {"STTp":<{20}} {"dSTdTTn":<{20}} {"dSTdTTp":<{20}} {"Tc":<{20}} {"Tn":<{20}} {"Tp":<{20}} {"low_vev":<{20}} {"high_vev":<{20}} {"dV":<{20}} {"dVdT":<{20}}  {"action":<{20}} \n')
 
     #free_param_list = df_free2['Parameter name'].tolist()
@@ -40,46 +43,35 @@ def InitializeDataFiles(data_type1):
 ####################### WRITING DATA FILES #############################
 ########################################################################
 
-def WriteFreeParam(free_param_list, training_data):
-    if training_data:
-        DataFile_FreeParam = open("TDataFile_FreeParam", "a") # Fix!
-    else:
-        DataFile_FreeParam = open("PDataFile_FreeParam", "a") # Fix!
-    for i in range(len(free_param_list)):
-        DataFile_FreeParam.writelines(f'{round(free_param_list[i],5):<{20}}')
-    DataFile_FreeParam.writelines('\n')
-    DataFile_FreeParam.close()
+def WriteFreeParam(free_param_list, data_type1):
+    prefix = prefixes[data_type1-1]
+    with open("DataFiles/{}DataFile_FreeParam".format(prefix), "a") as f:
+        for i in range(len(free_param_list)):
+            f.writelines(f'{round(free_param_list[i],5):<{20}}')
+        f.writelines('\n')
 
-def WriteFixedParam(fixed_param_list, training_data):
-    if training_data:
-        DataFile_FixedParam = open("TDataFile_FixedParam", "a") # Fix!
-    else:
-        DataFile_FixedParam = open("PDataFile_FixedParam", "a") # Fix!
-    for i in range(len(fixed_param_list)):
-        DataFile_FixedParam.writelines(f'{round(fixed_param_list[i],5):<{20}}')
-    DataFile_FixedParam.writelines('\n')
-    DataFile_FixedParam.close()
+def WriteFixedParam(fixed_param_list, data_type1):
+    prefix = prefixes[data_type1-1]
+    with open("DataFiles/{}DataFile_FixedParam".format(prefix), "a") as f:
+        for i in range(len(fixed_param_list)):
+            f.writelines(f'{round(fixed_param_list[i],5):<{20}}')
+        f.writelines('\n')
 
-def WriteLabelsCol(successful_run, spheno_output2, spheno_output3, higgsbounds_output, higgssignals_output, training_data):
-    if training_data:
-        DataFile_Labels = open("TDataFile_Labels", "a")
-    else:
-        DataFile_Labels = open("PDataFile_Labels", "a")
-    for i in range(3):
-        DataFile_Labels.writelines(f'{spheno_output2[i]:<{20}}')
-    DataFile_Labels.writelines(f'{spheno_output3:<{20}} {higgsbounds_output:<{20}} {higgssignals_output[0]:<{20}} {higgssignals_output[1]:<{20}} {higgssignals_output[2]:<{20}} {successful_run:<{20}} \n')
-    DataFile_Labels.close()
+def WriteLabelsCol(successful_run, spheno_output2, spheno_output3, higgsbounds_output, higgssignals_output, data_type1): 
+    prefix = prefixes[data_type1-1]
+    with open("DataFiles/{}DataFile_Labels_Col".format(prefix), "a") as f:
+        for i in range(3):
+            f.writelines(f'{spheno_output2[i]:<{20}}')
+        f.writelines(f'{spheno_output3:<{20}} {higgsbounds_output:<{20}} {higgssignals_output[0]:<{20}} {higgssignals_output[1]:<{20}} {higgssignals_output[2]:<{20}} {successful_run:<{20}} \n')
 
-def WriteLabelsGW(transition_order, alpha, beta, fpeak, ompeak, STTn, STTp, dSTdTTn, dSTdTTp, Tc, Tn, Tp, low_vev, high_vev, dV, dVdT, action, training_data):
-    if training_data:
-        DataFile_Labels_GW = open("TDataFile_Labels_GW", "a")
-    else:
-        DataFile_Labels_GW = open("PDataFile_Labels_GW", "a") 
-    DataFile_Labels_GW.writelines(f'{transition_order:<{20}} {alpha:<{20}} {beta:<{20}} {fpeak:<{20}} {ompeak:<{20}} {STTn:<{20}} {STTp:<{20}} {dSTdTTn:<{20}} {dSTdTTp:<{20}} {Tc:<{20}} {Tn:<{20}} {Tp:<{20}} {low_vev:<{20}} {high_vev:<{20}} {dV:<{20}} {dVdT:<{20}} {action:<{20}} \n')
-    DataFile_Labels_GW.close()
+def WriteLabelsGW(transition_order, alpha, beta, fpeak, ompeak, STTn, STTp, dSTdTTn, dSTdTTp, Tc, Tn, Tp, low_vev, high_vev, dV, dVdT, action, data_type1): 
+    prefix = prefixes[data_type1-1]
+    with open("DataFiles/{}DataFile_Labels_GW".format(prefix), "a") as f:
+        f.writelines(f'{transition_order:<{20}} {alpha:<{20}} {beta:<{20}} {fpeak:<{20}} {ompeak:<{20}} {STTn:<{20}} {STTp:<{20}} {dSTdTTn:<{20}} {dSTdTTp:<{20}} {Tc:<{20}} {Tn:<{20}} {Tp:<{20}} {low_vev:<{20}} {high_vev:<{20}} {dV:<{20}} {dVdT:<{20}} {action:<{20}} \n')
 
 
-
+def WriteEmptyLabelsGW(transition_order, data_type1):
+    WriteLabelsGW(transition_order,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, data_type1)
 
 
 ####################### READING DATA FILES #############################
@@ -98,10 +90,6 @@ def ReadFiles(data_type1, data_type2):
                         data containing all positive points.
     string data_type2:  which results to consider when creating labels. 'cosmic',
                         'collider' or 'both'.
-    plot_dist:          If False, points labelled 0/1 for positive/negative. If True,
-                        each point labelled according to which constraints it passes.
-                        Used to plot distribution of points satisfying the constraints
-                        seperately.
 
     '''
 
@@ -109,59 +97,38 @@ def ReadFiles(data_type1, data_type2):
     free_param_list = ReadFreeParams(data_type1)
 
     # Construct corresponding labels
-    if data_type1==1:       # Training data
-        l_col,l_gw = 0,0    # Temporary values
-        if data_type2=='both' or data_type2=='collider':
-            with open("TDataFile_Labels", "r") as f:
-                l_col = f.readlines()
-        if data_type2=='both' or data_type2=='cosmic':
-            with open("TDataFile_Labels_GW", "r") as f:
-                l_gw = f.readlines()
-        labels = CreateSingleLabel(l_col, l_gw, data_type2)
-    elif data_type1==2:  # Controlled predicted data w labels
-        l_col,l_gw = 0,0
-        if data_type2=='both' or data_type2=='collider':
-            with open("PDataFile_Labels", "r") as LabelFile_Col:
-                l_col = LabelFile_Col.readlines()
-        if data_type2=='both' or data_type2=='cosmic':
-            with open("PDataFile_Labels_GW", "r") as LabelFile_GW:
-                l_gw = LabelFile_GW.readlines()
-        labels = CreateSingleLabel(l_col, l_gw, data_type2)
-    elif data_type1==3:  # Final data containing only good points
-        l_col,l_gw = 0,0
-        if data_type2=='both' or data_type2=='collider':
-            with open("FDataFile_Labels", "r") as LabelFile_Col:
-                l_col = LabelFile_Col.readlines()
-        if data_type2=='both' or data_type2=='cosmic':
-            with open("FDataFile_Labels_GW", "r") as LabelFile_GW:
-                l_gw = LabelFile_GW.readlines()
-        labels = CreateSingleLabel(l_col, l_gw, data_type2)
- 
+    prefix = prefixes[data_type1-1]
+
+    l_col,l_gw = 0,0    # Temporary values
+    if data_type2=='both' or data_type2=='collider':
+        with open("DataFiles/{}DataFile_Labels_Col".format(prefix), "r") as f:
+            l_col = f.readlines()
+    if data_type2=='both' or data_type2=='cosmic':
+        with open("DataFiles/{}DataFile_Labels_GW".format(prefix), "r") as f:
+            l_gw = f.readlines()
+    labels = CreateSingleLabel(l_col, l_gw, data_type2) 
     data = np.c_[free_param_list, labels]
+
     return data
 
 
 def ReadFreeParams(data_type1):
     """ Read free-parameter values from training (T, data_type1=1), prediction (P, data_type1=2)
-    or final (F, data_type1=3) data files. """
+    or final (F, data_type1=3) data files.
+    Mainly used by Network.Predict() """
 
-    if data_type1==1:
-        with open("TDataFile_FreeParam", "r") as f:
-            l = f.readlines()
-    elif data_type==2:
-        with open("PDataFile_FreeParam", "r") as f:
-            l = f.readlines()
-    elif data_type1==3:
-        with open("FDataFile_FreeParam", "r") as f:
-            l = f.readlines()
-    
-    if len(l) <= 3:
+    prefix = prefixes[data_type1-1]
+    with open("DataFiles/{}DataFile_FreeParam".format(prefix), "r") as f:
+        l = f.readlines() 
+    if len(l) < 3:
         sys.exit("Erorr: found empty data file when attempting to read. data_type1 = {}".format(data_type1))
 
     free_param_list = np.array([l[i].split() for i in range(2,len(l))], dtype=object)
     free_param_list = free_param_list.astype(np.float64)                                
 
     return free_param_list
+
+
 
 
 
@@ -233,9 +200,9 @@ def CreateLabels(l_col, l_gw, data_type2, X=None): # X not used currently
 
         print("Number of points giving first-order phase transitions", np.sum(labels_PTO))
         print("Number of points giving detectable first-order phase transitions", np.sum(labels_omega))
-        print("Number of points giving strong first-order phase transitions", np.sum(labels_strong))
+        print("Number of points giving strong first-order phase transitions", np.sum(labels_strongPT))
 
-        labels_gw = np.multiply(np.multiply(labels_PTO, labels_omega), labels_strongPT)
+        labels_GW = np.multiply(np.multiply(labels_PTO, labels_omega), labels_strongPT)
         print("Number of points satisfying cosmic constraints", np.sum(labels_GW))
 
 
@@ -250,10 +217,10 @@ def CreateLabels(l_col, l_gw, data_type2, X=None): # X not used currently
     # label = 1 if point satisfies all constraints, else 0.
     if data_type2=='collider':
         return labels_Unitarity, labels_ST, labels_HBS
-    elif data_type_2=='cosmic':
+    elif data_type2=='cosmic':
         return labels_PTO, labels_omega, labels_strongPT
     elif data_type2=='both':
-        return labels_Unitarity, labels_ST, labels_HBS, labels_PTO, labels_omega, labels_strongPT, labels_col, labels_GW, labels
+        return labels_Unitarity, labels_ST, labels_HBS, labels_PTO, labels_omega, labels_strongPT
 
 
 def CreateSingleLabel(l_col, l_gw, data_type2):
@@ -307,6 +274,17 @@ def CreateSeperateLabels(l_col, l_gw, data_type2):
             X_new.append(X[i])
 
     return labels, X_new
+
+
+def CheckCollConstr(spheno_output2, spheno_output3, higgsbounds_output, higgssignals_output):
+        spheno_output2 = list(map(float, spheno_output2))
+        label_ST = 1 if DH.STellipse(S=spheno_output2[1], T=spheno_output2[0]) <= 1 else 0
+        label_U = float(spheno_output3)
+        label_HB = float(higgsbounds_output)
+        label_HS = 1 if float(higgssignals_output[2])<pvalue_threshold else 0 #2nd element is the p-value
+        label = label_ST * label_HB * label_HS * label_U
+        passed_collider_constr = True if label==1 else False
+        return passed_collider_constr
 
 
 def STellipse(S,T):

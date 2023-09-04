@@ -10,7 +10,7 @@ import subprocess
 
 
 def SearchGrid(construct_collider_data, construct_cosmic_data, keep_old_trn_data,
-                read_constr, train_network, load_network, save_network,
+                data_type2, train_network, load_network, save_network,
                 network_predicts, network_controls, sampling_method, optimize):
     """
     Inputs
@@ -49,41 +49,34 @@ def SearchGrid(construct_collider_data, construct_cosmic_data, keep_old_trn_data
             if in_param_list==None: # Constraint on free Lagrangian parameters (defined in EvalFcn) not satisfied
                 continue
 
-            DH.WriteFreeParam(free_param_list,training_data=True)
-            DH.WriteFixedParam(fixed_param_list,training_data=True)
+            DH.WriteFreeParam(free_param_list, data_type1=1)
+            DH.WriteFixedParam(fixed_param_list, data_type1=1)
 
             passed_collider_constr=True
             if construct_collider_data:
                 subprocess.run(["rm", "-f", SPheno_spc_path])
-                passed_collider_constr = DC.AnalysisCollider(in_param_list, training_data=True, optimize=optimize) 
+                passed_collider_constr = DC.AnalysisCollider(in_param_list, data_type1=1, optimize=optimize) 
 
             if construct_cosmic_data:
                 if passed_collider_constr:
                     print("PASSED COLLIDER DATA CONSTRAINTS")
-                    DH.AnalysisCosmic(in_param_list, training_data=True)
+                    DC.AnalysisCosmic(in_param_list, data_type1=1)
                 else:
-                    transition_order = 3
-                    alphaa, betaa = 0, 0
-                    fpeak, ompeak = 0, 0
-                    STTn, STTp, dSTdTTn, dSTdTTp = 0, 0, 0, 0
-                    Tc, Tn, Tp = 0, 0, 0
-                    low_vev, high_vev = 0, 0
-                    dV, dVdT = 0, 0
-                    action = 0
-                    DH.WriteLabelsGW(transition_order, alphaa, betaa, fpeak, ompeak, STTn, STTp, dSTdTTn, dSTdTTp, Tc, Tn, Tp, low_vev, high_vev, dV, dVdT, action, training_data=True)
-
-        data = DH.ReadFiles(data_type1=1, data_type2=read_constr)
-        #Network.PlotData(data[:,:10], data[:,10], "TrainPlot")
+                    DH.WriteEmptyLabelsGW(transition_order=3, data_type1=1)
+ 
+        # Print summary of training data
+        DH.ReadFiles(data_type1=1, data_type2=data_type2)
 
 
     #----------------------------TRAIN NETWORK-------------------------------
     if train_network or load_network:
-        Network.TrainANN(read_data, under_sample=0.001, over_sample=None, load_network=load_network, train_network=train_network, save_network=save_network)
+        subprocess.run(["mkdir", "-p", "TrainedANN"])
+        Network.TrainANN(data_type2, under_sample=0.001, over_sample=None, load_network=load_network, train_network=train_network, save_network=save_network)
 
 
     #------------TRAINED NETWORK MAKES PREDICTIONS----------------
     if network_predicts:
-        DH.InitializeDataFiles(training_data=2)
+        DH.InitializeDataFiles(data_type1=2)
         pred_samples = DC.Sampling(exp_num_pred_points, sampling_method=sampling_method)
         
         # Construct input data
@@ -92,8 +85,8 @@ def SearchGrid(construct_collider_data, construct_cosmic_data, keep_old_trn_data
             if in_param_list==None: # Constraint on free Lagrangian parameters (defined in EvalFcn) not satisfied
                 continue
             # Write all samples into PDataFiles. Labels not needed for predictions.
-            DH.WriteFreeParam(free_param_list,training_data=False)
-            DH.WriteFixedParam(fixed_param_list, training_data=False)
+            DH.WriteFreeParam(free_param_list,data_type1=2)
+            DH.WriteFixedParam(fixed_param_list,data_type1=2)
 
         # Network makes predictions based off inputs from PDataFiles
         predictions =  np.array(Network.Predict())
@@ -104,11 +97,11 @@ def SearchGrid(construct_collider_data, construct_cosmic_data, keep_old_trn_data
 
         if network_controls:
             # Read Input parameters required for analysis.
-            with open("PDataFile_FreeParam", "r") as f:
+            with open("DataFiles/PDataFile_FreeParam", "r") as f:
                 l1 = np.array(f.readlines())
-            with open("PDataFile_FixedParam", "r") as f:
+            with open("DataFiles/PDataFile_FixedParam", "r") as f:
                 l2 = np.array(f.readlines())
-            DH.InitializeDataFiles(training_data=2)
+            DH.InitializeDataFiles(data_type1=2)
 
             #with open("PDataFile_FreeParam", "a") as f:
             #    f.writelines(l1[pos_prediction_indicies+2])
@@ -126,57 +119,49 @@ def SearchGrid(construct_collider_data, construct_cosmic_data, keep_old_trn_data
             for i in tqdm(range(len(l1_pos))):
                 free_param_list = [np.float64(item) for item in l1_pos[i].split()]
                 fixed_param_list = [np.float64(item) for item in l2_pos[i].split()]
-                DH.WriteFreeParam(in_param_list,training_data=False)
-                DH.WriteFixedParam(fixed_param_list, training_data=False)
+                DH.WriteFreeParam(in_param_list,data_type1=2)
+                DH.WriteFixedParam(fixed_param_list, data_type1=2)
 
                 passed_collider_constr=True
                 if read_data=='both' or read_data=='collider':
                     subprocess.run(["rm", "-f", SPheno_spc_path])
-                    passed_collider_constr = DC.AnalysisCollider(in_param_list, training_data=False, optimize=optimize)
+                    passed_collider_constr = DC.AnalysisCollider(in_param_list, data_type1=2, optimize=optimize)
                 if read_data=='both' or read_data=='cosmic':
                     if passed_collider_constr:
-                        #print("PASSED COLLIDER DATA CONSTRAINTS")
-                        DC.AnalysisCosmic(in_param_list, training_data=False)
+                        print("PASSED COLLIDER DATA CONSTRAINTS")
+                        DC.AnalysisCosmic(in_param_list, data_type1=2)
                     else:
-                        transition_order = 3
-                        alphaa, betaa = 0, 0
-                        fpeak, ompeak = 0, 0
-                        STTn, STTp, dSTdTTn, dSTdTTp = 0, 0, 0, 0
-                        Tc, Tn, Tp = 0, 0, 0
-                        low_vev, high_vev = 0, 0
-                        dV, dVdT = 0, 0
-                        action = 0
-                        DH.WriteLabelsGW(transition_order, alphaa, betaa, fpeak, ompeak, STTn, STTp, dSTdTTn, dSTdTTp, Tc, Tn, Tp, low_vev, high_vev, dV, dVdT, action, training_data=False)
+                        DH.WriteEmptyLabelsGW(transition_order=3, data_type1=2)
 
 
 
             # Read controlled points. Find indicies of positive points.
-            data = DH.ReadFiles(data_type1=2, data_type2=read_constr)
+            data = DH.ReadFiles(data_type1=2, data_type2=data_type2)
             labels = np.array(data[:,10])
             pos_points_indicies = np.where(labels==1)[0]
             pos_points_indicies = np.insert(pos_points_indicies, 0, [-2,-1]) #Insert two zeros at beginning
 
             #DC.InitializeDataFiles(training_data=False, pos_data=True)
-            with open("PDataFile_FreeParam", "r") as f:
+            with open("DataFiles/PDataFile_FreeParam", "r") as f:
                 l = np.array(f.readlines())
-            with open("FDataFile_FreeParam", "w") as f:
+            with open("DataFiles/FDataFile_FreeParam", "w") as f:
                 f.writelines(l[pos_points_indicies+2])
-            with open("PDataFile_FixedParam", "r") as f:
+            with open("DataFiles/PDataFile_FixedParam", "r") as f:
                 l = np.array(f.readlines())
-            with open("FDataFile_FixedParam", "w") as f:
+            with open("DataFiles/FDataFile_FixedParam", "w") as f:
                 f.writelines(l[pos_points_indicies+2])
             if read_data=='both' or read_data=='collider':
-                with open("PDataFile_Labels", "r") as f:
+                with open("DataFiles/PDataFile_Labels_Col", "r") as f:
                     l = np.array(f.readlines())
-                with open("FDataFile_Labels", "w") as f:
+                with open("DataFiles/FDataFile_Labels_Col", "w") as f:
                     f.writelines(l[pos_points_indicies+2])
             if read_data=='both' or read_data=='cosmic':
-                with open("PDataFile_Labels_GW", "r") as f:
+                with open("DataFiles/PDataFile_Labels_GW", "r") as f:
                     l = np.array(f.readlines())
-                with open("FDataFile_Labels_GW", "w") as f:
+                with open("DataFiles/FDataFile_Labels_GW", "w") as f:
                     f.writelines(l[pos_points_indicies+2])
 
-            data = DH.ReadFiles(data_type1=3, data_type2=read_constr)
+            data = DH.ReadFiles(data_type1=3, data_type2=data_type2)
             #print("Constructing plot of all accumulated positive points")
             #Network.PlotData(data[:,:10], data[:,10], "FinalPlot", plot_dist=False, read_data=read_data)
         
@@ -184,78 +169,27 @@ def SearchGrid(construct_collider_data, construct_cosmic_data, keep_old_trn_data
     return "Done!"
 
 
-def EvalFcnNew(sample):
-    mC,mN1,mN2 = sample[-3], sample[-2], sample[-1] #Hpm,hh_1,hh_2
-    mH = float(df['Range start'][13])
-
-    d = dict((df_free2['Parameter name'].to_numpy()[j], sample[j]) for j in range(num_free_param))
-    d['v'] = v
-    d['lam3'] = 0
-    d['lam4'] = 0
-    d['mH'] = float(df['Range start'][13])
-
-
-    lam8 =(1/v**2) * 2**(3/2) * cmath.sqrt((mC**2)-(mN1**2)) * cmath.sqrt ((mN2**2)-(mC**2))
-    if round(lam8.imag,5) > 0:
-        return None, None
-    else:
-        lam8 = lam8.real
-
-    lam9 = eval(df['Dependence'][8], d)
-    mT = eval(df['Dependence'][11], d)
-    mS = eval(df['Dependence'][12], d)
-
-    #print("REAL PARAMETER CHECK IS TURNED OFF!")
-    if mS<0 or mT<0:
-        return None, None
-    #print("charged", mC, "neutral", mN1,mN2)
-
-    mass_list = [mH,mN1,mN2,mC]
-    in_param_list = [sample[0], sample[1], 0, 0, sample[2], sample[3], sample[4], lam8, lam9, sample[5], sample[6], mT, mS]
-    #in_param_list = InParam[i]
-    #mass_list = Masses[i]
-
-    return in_param_list, mass_list
-
-
-
 def EvalFcn(sample):
-    dict1 = dict((df_free2['Parameter name'].to_numpy()[i], sample[i]) for i in range(len(df_free2.index))) 
-    dict2 = df_free3.set_index("Parameter name")["Range start"].to_dict()
-    d = dict1 | dict2
-    d['v'] = v
-    d["cmath"] = cmath
-
-    dep_param_names = df_d["Parameter name"].to_numpy()
-    dependicies = df_d["Dependence"].to_numpy()
-    dict3 = dict((dep_param_names[i], eval(dependicies[i], d)) for i in range(len(df_d.index)))
-
-    dep_param_values = list(dict3.values())
+    # Dictionaries containing variables (names) and corresponding values
+    dict_free_param = {param_name: sample_value for param_name, sample_value in zip(free_param_names, sample)}
+    #dict_fixed_param1 defined globally in UserInput
+    dict_fixed_param2 = {param_name: eval(dependency, dict_free_param | dict_fixed_param1) for param_name, dependency in zip(fixed_param2_names, fixed_param2_dependicies)}
 
     ########### Specific to TC #########
-    lam8,lam9,mT,mS = dep_param_values
+    lam8,lam9,mT,mS = list(dict_fixed_param2.values())
     if round(lam8.imag,5) > 0:
         return None, None, None
     else:
-        dict3["lam8"] = lam8.real
+        dict_fixed_param2["lam8"] = lam8.real
     if mT<0 or mS<0:
         return None, None, None
     ####################################
 
-    d = dict1 | dict2 | dict3
-    d['v'] = v
+    d = dict_free_param | dict_fixed_param1 | dict_fixed_param2
 
-    df_in = df_L[["Parameter name"]].copy()
-    df_in["Parameter value"] = df_in["Parameter name"].map(d)
-    in_param_list = df_in["Parameter value"].tolist()
-
-    df_free = df_free2[["Parameter name"]].copy()
-    df_free["Parameter value"] = df_free["Parameter name"].map(d)
-    free_param_list = df_free["Parameter value"].tolist()
-
-    df_fixedd = df_fixed[["Parameter name"]].copy()
-    df_fixedd["Parameter value"] = df_fixedd["Parameter name"].map(d)
-    fixed_param_list = df_fixedd["Parameter value"].tolist()
+    in_param_list = series_in_param.map(d).tolist()
+    free_param_list = series_free_param.map(d).tolist()
+    fixed_param_list = series_fixed_param.map(d).tolist()
 
     return in_param_list, free_param_list, fixed_param_list
 
@@ -265,9 +199,9 @@ def EvalFcn(sample):
 
 SearchGrid(
         construct_collider_data=True,
-        construct_cosmic_data=False,
-        keep_old_trn_data=False,
-        read_constr='collider', # 'collider','cosmic','both'
+        construct_cosmic_data=True,
+        keep_old_trn_data=False,    # Only set to True if data files already contain data
+        data_type2='both', # 'collider','cosmic','both'
         train_network=False,
         load_network=False,
         save_network=False,  # only saved network loads for predictions, fix!

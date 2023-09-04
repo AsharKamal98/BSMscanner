@@ -22,7 +22,7 @@ import pandas as pd
 # OTHER SCRIPTS IN FRAMEWORK 
 from UserInput import *
 from UserInputPaths import *
-import DataHandling 
+import DataHandling as DH 
 
 
 """
@@ -291,7 +291,7 @@ def PlotMetric(history,y_trn,y_val):
     plt.plot(np.arange(num_epochs-5), (history)['val_loss'][5:], 'r', label="val loss")
     plt.legend()
     #plt.show()
-    plt.savefig('Trained_Model/LossPlot.pdf')
+    plt.savefig('TrainedANN/LossPlot.pdf')
     plt.figure()
 
     plt.plot(np.arange(num_epochs), history[keys[1]], 'b', label="accuracy")
@@ -299,7 +299,7 @@ def PlotMetric(history,y_trn,y_val):
     plt.ylim(0,1.1)
     plt.legend()
     #plt.show()
-    plt.savefig('Trained_Model/AccuracyPlot.pdf')
+    plt.savefig('TrainedANN/AccuracyPlot.pdf')
     plt.figure()
 
     plt.plot(Elist, avg_Efficiency, linestyle=':', color='blue', label="Efficiency")
@@ -307,7 +307,7 @@ def PlotMetric(history,y_trn,y_val):
     plt.ylim(-0.001,0.03)
     plt.legend()
     #plt.show()
-    plt.savefig('Trained_Model/EfficiencyPlot.pdf')
+    plt.savefig('TrainedANN/EfficiencyPlot.pdf')
     plt.figure()
 
     plt.plot(Elist, avg_Exhaustiveness, linestyle=':', color='blue', label="Exhaustiveness")
@@ -315,7 +315,7 @@ def PlotMetric(history,y_trn,y_val):
     plt.ylim(-0.02,1.1)
     plt.legend()
     #plt.show()
-    plt.savefig('Trained_Model/ExhaustivenessPlot.pdf')
+    plt.savefig('TrainedANN/ExhaustivenessPlot.pdf')
     plt.figure()
 
     plt.plot(Elist, avg_TP, linestyle=':', color='blue', label="True Positives")
@@ -324,14 +324,14 @@ def PlotMetric(history,y_trn,y_val):
     plt.axhline(y = np.sum(y_val), color = 'red')
     plt.legend()
     #plt.show()
-    plt.savefig('Trained_Model/TruePosPlot.pdf')
+    plt.savefig('TrainedANN/TruePosPlot.pdf')
     plt.figure()
 
     plt.plot(Elist, avg_FP, linestyle=':', color='blue', label="False Positives")
     plt.plot(Elist, avg_val_FP, linestyle=':', color='red', label="Val False Positives")
     plt.legend()
     #plt.show()
-    plt.savefig('Trained_Model/FalsePosPlot.pdf')
+    plt.savefig('TrainedANN/FalsePosPlot.pdf')
 
     
     return None
@@ -351,13 +351,13 @@ def NormalizeInput(X, new_scheme=True, mean=None, std=None):
 def TrainANN(data_type2, under_sample=None, over_sample=None, load_network=False, train_network=True, save_network=True):
 
     if load_network:
-        model = tf.keras.models.load_model("Trained_Model/Model")
-        with open("Trained_Model/Model_History.pkl", "rb") as f:
+        model = tf.keras.models.load_model("TrainedANN/Model")
+        with open("TrainedANN/Model_History.pkl", "rb") as f:
             history = pickle.load(f)
-        X_boosted_trn = np.load("Trained_Model/x_train.npy")
-        y_boosted_trn = np.load("Trained_Model/y_train.npy")
-        X_val = np.load("Trained_Model/x_val.npy")
-        y_val = np.load("Trained_Model/y_val.npy")
+        X_boosted_trn = np.load("TrainedANN/x_train.npy")
+        y_boosted_trn = np.load("TrainedANN/y_train.npy")
+        X_val = np.load("TrainedANN/x_val.npy")
+        y_val = np.load("TrainedANN/y_val.npy")
         print("Loaded saved ANN model")
         print("\nNetwork architecture")
         print(model.summary())
@@ -367,7 +367,7 @@ def TrainANN(data_type2, under_sample=None, over_sample=None, load_network=False
         print("Network architecture")
         print(model.summary())
     
-        data = ReadFiles(data_type=1, data_type2=data_type2, plot_dist=False)
+        data = DH.ReadFiles(data_type1=1, data_type2=data_type2)
         X = data[:,:10]
         X_norm, norm_var = NormalizeInput(X, new_scheme=True, mean=None, std=None)
         y = data[:,10]
@@ -389,13 +389,13 @@ def TrainANN(data_type2, under_sample=None, over_sample=None, load_network=False
             model.save("Trained_Model/Model")
             with open("Trained_Model/Model_History.pkl", "wb") as f:
                 pickle.dump(history, f)
-            np.save("Trained_Model/x_train.npy", X_boosted_trn)
-            np.save("Trained_Model/y_train.npy", y_boosted_trn)
-            np.save("Trained_Model/x_val.npy", X_val)
-            np.save("Trained_Model/y_val.npy", y_val)
-            np.save("Trained_Model/NormVariables.npy", norm_var)
+            np.save("TrainedANN/x_train.npy", X_boosted_trn)
+            np.save("TrainedANN/y_train.npy", y_boosted_trn)
+            np.save("TrainedANN/x_val.npy", X_val)
+            np.save("TrainedANN/y_val.npy", y_val)
+            np.save("TrainedANN/NormVariables.npy", norm_var)
 
-            print("Saved network, its history and training/validation sets in the directory Trained_Network")
+            print("Saved network, its history and training/validation sets in the directory TrainedANN")
 
         #y = model.predict(X_val)
         #y = [1 if item > 0.5 else 0 for item in y]
@@ -413,11 +413,11 @@ def TrainANN(data_type2, under_sample=None, over_sample=None, load_network=False
     return None
 
 def Predict():
-    model = tf.keras.models.load_model("Trained_Model/Model")
-    norm_var = np.load("Trained_Model/NormVariables.npy")
+    model = tf.keras.models.load_model("TrainedANN/Model")
+    norm_var = np.load("TrainedANN/NormVariables.npy")
     mean, std = norm_var[0], norm_var[1]
 
-    X = DataHandling.ReadFreeParams(data_type1=2)
+    X = DH.ReadFreeParams(data_type1=2)
     X_norm = NormalizeInput(X, new_scheme=False, mean=mean, std=std)
 
     print("\nNetwork is making predictions")

@@ -10,9 +10,9 @@ num_in_param = 13  # Fix! Can be found from df
 num_free_param = 10  # Fix!
 num_h = 2
 num_hp = 3
-exp_num_training_points = 3 #18=22h, 9=24-36hh
+exp_num_training_points = 11 #18=22h, 9=24-36hh
 num_training_points = 2**(exp_num_training_points)
-exp_num_pred_points = 6
+exp_num_pred_points = 10
 num_pred_points = 2**(exp_num_pred_points)
 
 
@@ -34,7 +34,11 @@ d = { \
 ########################################################### NETWORK INPUT #######################################################
 #================================================================================================================================
 network_verbose=False
-network_epochs=500
+network_epochs=50
+under_sample=0.1
+over_sample=None
+
+
 
 pvalue_threshold = 0.05
 S_threshold = [-0.02, 0.10]

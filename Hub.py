@@ -56,10 +56,9 @@ def SearchGrid(construct_collider_data, construct_cosmic_data, keep_old_trn_data
             if construct_collider_data:
                 subprocess.run(["rm", "-f", SPheno_spc_path])
                 passed_collider_constr = DC.AnalysisCollider(in_param_list, data_type1=1, optimize=optimize) 
-
             if construct_cosmic_data:
                 if passed_collider_constr:
-                    print("PASSED COLLIDER DATA CONSTRAINTS")
+                    print("Evaluating cosmic constraints")
                     DC.AnalysisCosmic(in_param_list, data_type1=1)
                 else:
                     DH.WriteEmptyLabelsGW(transition_order=3, data_type1=1)
@@ -71,64 +70,64 @@ def SearchGrid(construct_collider_data, construct_cosmic_data, keep_old_trn_data
     #----------------------------TRAIN NETWORK-------------------------------
     if train_network or load_network:
         subprocess.run(["mkdir", "-p", "TrainedANN"])
-        Network.TrainANN(data_type2, under_sample=0.001, over_sample=None, load_network=load_network, train_network=train_network, save_network=save_network)
+        model, norm_var = Network.TrainANN(data_type2, under_sample, over_sample, load_network, train_network, save_network)
 
 
     #------------TRAINED NETWORK MAKES PREDICTIONS----------------
     if network_predicts:
         DH.InitializeDataFiles(data_type1=2)
-        pred_samples = DC.Sampling(exp_num_pred_points, sampling_method=sampling_method)
+        DH.TempInitialize()                             # TEMPORARY
+        pred_samples = DC.Sampling(exp_num_pred_points, sampling_method)
         
         # Construct input data
         for i in range(len(pred_samples)):
             in_param_list, free_param_list, fixed_param_list = EvalFcn(pred_samples[i])
             if in_param_list==None: # Constraint on free Lagrangian parameters (defined in EvalFcn) not satisfied
                 continue
-            # Write all samples into PDataFiles. Labels not needed for predictions.
+            # Write all samples into PDataFiles.
             DH.WriteFreeParam(free_param_list,data_type1=2)
             DH.WriteFixedParam(fixed_param_list,data_type1=2)
+            DH.TempWrite(in_param_list)                 # TEMPORARY
 
-        # Network makes predictions based off inputs from PDataFiles
-        predictions =  np.array(Network.Predict())
+        # Network makes predictions based off inputs from PDataFiles. 
+        predictions =  np.array(Network.Predict(model, norm_var))
+        # The positive prediction indicies can be matched to data written in files above.
         pos_prediction_indicies = np.where(predictions==1)[0]
 
-        print("Network has predicted", np.sum(predictions), "positive points out of", predictions.shape[0], "points")
-        #print(predictions)
+        print("Network has predicted", np.sum(predictions), "positive points out of", predictions.shape[0], "points\n")
 
+
+    #------------PREDICTIONS ARE CONTROLLED----------------
         if network_controls:
             # Read Input parameters required for analysis.
             with open("DataFiles/PDataFile_FreeParam", "r") as f:
                 l1 = np.array(f.readlines())
             with open("DataFiles/PDataFile_FixedParam", "r") as f:
                 l2 = np.array(f.readlines())
+            with open("DataFiles/DataFile_InParam", "r") as f:              # TEMPORARY
+                l3 = np.array(f.readlines())
             DH.InitializeDataFiles(data_type1=2)
 
-            #with open("PDataFile_FreeParam", "a") as f:
-            #    f.writelines(l1[pos_prediction_indicies+2])
-            #with open("PDataFile_Masses", "r") as f:
-            #    l2 = np.array(f.readlines())
-            #DC.InitializeDataFiles(training_data=False)
-            #with open("PDataFile_Masses", "a") as f:
-            #    f.writelines(l2[pos_prediction_indicies+2])
-   
             l1_pos = l1[pos_prediction_indicies+2]
             l2_pos = l2[pos_prediction_indicies+2]
+            l3_pos = l3[pos_prediction_indicies+2]
 
             print("\nControlling positively predicted points")
             # For loop over all positively predicted points
             for i in tqdm(range(len(l1_pos))):
                 free_param_list = [np.float64(item) for item in l1_pos[i].split()]
                 fixed_param_list = [np.float64(item) for item in l2_pos[i].split()]
-                DH.WriteFreeParam(in_param_list,data_type1=2)
+                in_param_list = [np.float64(item) for item in l3_pos[i].split()]
+                DH.WriteFreeParam(free_param_list,data_type1=2)
                 DH.WriteFixedParam(fixed_param_list, data_type1=2)
 
                 passed_collider_constr=True
-                if read_data=='both' or read_data=='collider':
+                if data_type2=='both' or data_type2=='collider':
                     subprocess.run(["rm", "-f", SPheno_spc_path])
                     passed_collider_constr = DC.AnalysisCollider(in_param_list, data_type1=2, optimize=optimize)
-                if read_data=='both' or read_data=='cosmic':
+                if data_type2=='both' or data_type2=='cosmic':
                     if passed_collider_constr:
-                        print("PASSED COLLIDER DATA CONSTRAINTS")
+                        print("Evaluating cosmic constraints")
                         DC.AnalysisCosmic(in_param_list, data_type1=2)
                     else:
                         DH.WriteEmptyLabelsGW(transition_order=3, data_type1=2)
@@ -137,11 +136,11 @@ def SearchGrid(construct_collider_data, construct_cosmic_data, keep_old_trn_data
 
             # Read controlled points. Find indicies of positive points.
             data = DH.ReadFiles(data_type1=2, data_type2=data_type2)
-            labels = np.array(data[:,10])
+            labels = np.array(data[:,-1])
             pos_points_indicies = np.where(labels==1)[0]
             pos_points_indicies = np.insert(pos_points_indicies, 0, [-2,-1]) #Insert two zeros at beginning
 
-            #DC.InitializeDataFiles(training_data=False, pos_data=True)
+            DH.InitializeDataFiles(data_type1=3)
             with open("DataFiles/PDataFile_FreeParam", "r") as f:
                 l = np.array(f.readlines())
             with open("DataFiles/FDataFile_FreeParam", "w") as f:
@@ -150,23 +149,21 @@ def SearchGrid(construct_collider_data, construct_cosmic_data, keep_old_trn_data
                 l = np.array(f.readlines())
             with open("DataFiles/FDataFile_FixedParam", "w") as f:
                 f.writelines(l[pos_points_indicies+2])
-            if read_data=='both' or read_data=='collider':
+            if data_type2=='both' or data_type2=='collider':
                 with open("DataFiles/PDataFile_Labels_Col", "r") as f:
                     l = np.array(f.readlines())
                 with open("DataFiles/FDataFile_Labels_Col", "w") as f:
                     f.writelines(l[pos_points_indicies+2])
-            if read_data=='both' or read_data=='cosmic':
+            if data_type2=='both' or data_type2=='cosmic':
                 with open("DataFiles/PDataFile_Labels_GW", "r") as f:
                     l = np.array(f.readlines())
                 with open("DataFiles/FDataFile_Labels_GW", "w") as f:
                     f.writelines(l[pos_points_indicies+2])
 
-            data = DH.ReadFiles(data_type1=3, data_type2=data_type2)
+            #data = DH.ReadFiles(data_type1=3, data_type2=data_type2)
             #print("Constructing plot of all accumulated positive points")
             #Network.PlotData(data[:,:10], data[:,10], "FinalPlot", plot_dist=False, read_data=read_data)
         
-
-    return "Done!"
 
 
 def EvalFcn(sample):
@@ -198,15 +195,15 @@ def EvalFcn(sample):
 
 
 SearchGrid(
-        construct_collider_data=True,
-        construct_cosmic_data=True,
-        keep_old_trn_data=False,    # Only set to True if data files already contain data
-        data_type2='both', # 'collider','cosmic','both'
-        train_network=False,
+        construct_collider_data=False,
+        construct_cosmic_data=False,
+        keep_old_trn_data=True,    # Only set to True if data files already contain data
+        data_type2='collider', # 'collider','cosmic','both'
+        train_network=True,
         load_network=False,
         save_network=False,  # only saved network loads for predictions, fix!
-        network_predicts=False,
-        network_controls=False,
+        network_predicts=True,
+        network_controls=True,
         sampling_method=1,   # 1=sobol sequence, 2=InDataFile
         optimize=True
         )

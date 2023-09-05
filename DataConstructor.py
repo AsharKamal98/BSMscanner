@@ -1,7 +1,6 @@
 import numpy as np
 import math
 from scipy.stats import qmc
-#import matplotlib.pyplot as plt
 import pandas as pd
 import subprocess
 import sys
@@ -16,9 +15,9 @@ from UserInputPaths import *
 import DataHandling as DH
 sys.path.insert(0, CT_path)
 from LS_TColor_DRPython import LS_TColor, nVevs
-from gwFuns import *
+#from gwFuns import *
 
-def AnalysisCollider(in_param_list, data_type1, optimize=False):
+def AnalysisCollider(in_param_list, data_type1, optimize):
 
     # Find MINPAR block in LesHouches file
     InputFile = open(LesHouches_path, "r")
@@ -34,8 +33,9 @@ def AnalysisCollider(in_param_list, data_type1, optimize=False):
     InputFile.close()
 
     # Try running HEP packages
+    RunSPheno(model)
     try:
-        RunSPheno(model)
+        #RunSPheno(model)
         spheno_output1, spheno_output2, spheno_output3 = ReadSPheno() #SPO1 not used!
         RunHiggsBounds()
         higgsbounds_output = ReadHiggsBounds()
@@ -48,7 +48,7 @@ def AnalysisCollider(in_param_list, data_type1, optimize=False):
         print("HEP packages did not run as expected!")
         print("exception:", e)
 
-        spheno_output2 = [0, 0, 0] # Fix!
+        spheno_output2 = [0, 0, 0] 
         spheno_output3 = [0]
         higgsbounds_output = 0
         higgssignals_output = [0,0,0]
@@ -59,7 +59,7 @@ def AnalysisCollider(in_param_list, data_type1, optimize=False):
     
     # Check label. Only needed if we want to optimize code
     if optimize:
-        passed_collider_constr = DH.CheckCollConstr
+        passed_collider_constr = DH.CheckCollConstr(spheno_output2, spheno_output3, higgsbounds_output, higgssignals_output)
     else:
         passed_collider_constr = True
 
@@ -70,36 +70,37 @@ def AnalysisCosmic(in_param_list, data_type1):
     print("RUNNING COSMIC ANALYSIS --------------------------------------------------------------------------------------------")
     print(in_param_list)
 
-    alphaa, betaa = 0, 0
-    fpeak, ompeak = 0, 0
-    STTn, STTp, dSTdTTn, dSTdTTp = 0, 0, 0, 0
-    Tc, Tn, Tp = 0, 0, 0
-    low_vev, high_vev = 0, 0
-    dV, dVdT = 0, 0
-    action = 0
+    alphaa,betaa,fpeak,ompeak,STTn,STTp,dSTdTTn,dSTdTTp,Tc,Tn,Tp,low_vev,high_vev,dV,dVdT,action = 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
     try:
+        # Re-direct messages when running CosmoTransitions
         with open(os.devnull, 'w') as null_file:
             with contextlib.redirect_stdout(null_file), contextlib.redirect_stderr(null_file):
                 m = RunCosmoTransitions(in_param_list)
                 tn_trans = m.TnTrans
-        if len(tn_trans)>0:
-            alpha_list = np.zeros(len(tn_trans))
+
+        # If CT has found phase transition(s) ...
+        num_of_PTs = len(tn_trans)
+        if num_of_PTs > 0:
+            alpha_list = np.zeros(num_of_PTs)
             found_true_FOPT = False
-            for i in range(len(tn_trans)):
-                transition_order = tn_trans[i]['trantype']   #FOPT/SOPT
+            # ... iterate through all proposed phase transitions ...
+            for i in range(num_of_PTs):
+                transition_order = tn_trans[i]['trantype']
+                # ... that are of first-order.
                 if transition_order==1:
                     ratio = tn_trans[i]['action']/tn_trans[i]['Tnuc']
+                    # If the proposed FOPT indeed is a PT, save it.
                     if ratio > 120 and ratio < 160:
                         alphaa = tn_trans[i]['alpha_theta']
                         alpha_list[i] = alphaa
                         betaa = tn_trans[i]['betaH']
                         found_true_FOPT = True
-
+            
+            # Find strongest PT with energy release (alpha) as metric.
             if found_true_FOPT:
                 alpha_index = alpha_list.argmax() 
                 try:
                     print("Running GW funcs code")
-                    #start_time = time.time()
                     with open(os.devnull, 'w') as null_file:
                         with contextlib.redirect_stdout(null_file), contextlib.redirect_stderr(null_file):
                             gw_dict = gw_pars(m, transId=alpha_index)
@@ -110,39 +111,35 @@ def AnalysisCosmic(in_param_list, data_type1):
                     Tc, Tn, Tp = gw_dict['Tc'], gw_dict['Tn'], gw_dict['Tp']
                     low_vev, high_vev = gw_dict['low_vev'][0], gw_dict['high_vev'][0]
                     dV, dVdT = gw_dict['dV'][0], gw_dict['dVdT'][0]
-                    action = tn_trans[alpha_index]['action']
-                    
+                    action = tn_trans[alpha_index]['action'] 
                     print("Found FOPT, GW Func code finished successfully!")
 
                 except Exception as e:
-                    print("SOMETHING BAD HAPPENED! GWFUNC FAILED ON A REAL FOPT")
+                    print("GWFUNC FAILED ON A REAL FOPT")
                     print(e)
-                    transition_order = 99   #FOPT but GW Func calculation failed 
+                    transition_order = 99   #Found FOPT but GW Func calculation failed 
 
             else:
-                transition_order = 0  #No transition/SOPT
+                transition_order = 0  #No real FOPTs not found
 
         else:
-            transition_order = 0  #No transition/SOPT
+            transition_order = 0    #No PTs found
+
     except:
-        print("Running final exception")
-        transition_order = -1     #Numeric error
+        print("RUNNING FINAL EXCEPTION. COSMIC ANALYSIS WAS (MANUALLY) INTERRUPTED OR CRASHED MYSTEROUSLY.")
+        transition_order = -1     #Cosmic analysis was (manually) interrupted or CosmoTrnasitions crashed mysteriously
     
-    finally:
-        try:
-            DH.WriteLabelsGW(transition_order, alphaa, betaa, fpeak, ompeak, STTn, STTp, dSTdTTn, dSTdTTp, Tc, Tn, Tp, low_vev, high_vev, dV, dVdT, action, data_type1)
-        except:
-            print("The new try block is working as expected!")
-            alphaa, betaa = 0, 0
-            fpeak, ompeak = 0, 0
-            STTn, STTp, dSTdTTn, dSTdTTp = 0, 0, 0, 0
-            Tc, Tn, Tp = 0, 0, 0
-            low_vev, high_vev = 0, 0
-            dV, dVdT = 0, 0
-            action = 0
-            transition_order = 99
-            DH.WriteLabelsGW(transition_order, alphaa, betaa, fpeak, ompeak, STTn, STTp, dSTdTTn, dSTdTTp, Tc, Tn, Tp, low_vev, high_vev, dV, dVdT, action, data_type1)
-    return None
+
+    # Try writing data into data files
+    try:
+        DH.WriteLabelsGW(transition_order, alphaa, betaa, fpeak, ompeak, STTn, STTp, dSTdTTn, dSTdTTp, Tc, Tn, Tp, low_vev, high_vev, dV, dVdT, action, data_type1)
+    except:
+        print("COULD NOT WRITE FINAL RESULTS INTO DATA FILES")
+        transition_order = 99
+        DH.WriteEmptyLabelsGW(transition_order, data_type1)
+    
+
+    return
 
 
 def Sampling(exp_num_points, sampling_method):

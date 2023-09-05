@@ -1,7 +1,10 @@
 # IMPORT ANN libraries
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
+
 from collections import Counter
 from sklearn.datasets import make_classification
 from imblearn.over_sampling import SMOTE
@@ -175,7 +178,7 @@ def SpecialPlot(X, y, fig_name):
 
 """
 
-def Boosting(X, y, under_sample=None, over_sample=None):
+def Boosting(X, y, under_sample, over_sample):
     counter = Counter(y)
     print("Classes distribution before boosting", counter)
 
@@ -228,7 +231,7 @@ def Train(model, X_trn, y_trn, X_val, y_val):
         batch_size=3000,
         epochs=network_epochs,
         validation_data = (X_val, y_val),
-        class_weight = {0: 1.0, 1: 2.0},
+        class_weight = {0: 1.0, 1: 10.0},
         verbose=network_verbose,
         )
     return history.history, model
@@ -348,8 +351,7 @@ def NormalizeInput(X, new_scheme=True, mean=None, std=None):
 
 
 
-def TrainANN(data_type2, under_sample=None, over_sample=None, load_network=False, train_network=True, save_network=True):
-
+def TrainANN(data_type2, under_sample, over_sample, load_network, train_network, save_network):
     if load_network:
         model = tf.keras.models.load_model("TrainedANN/Model")
         with open("TrainedANN/Model_History.pkl", "rb") as f:
@@ -358,33 +360,30 @@ def TrainANN(data_type2, under_sample=None, over_sample=None, load_network=False
         y_boosted_trn = np.load("TrainedANN/y_train.npy")
         X_val = np.load("TrainedANN/x_val.npy")
         y_val = np.load("TrainedANN/y_val.npy")
+        norm_var = np.load("TrainedANN/NormVariables.npy")
         print("Loaded saved ANN model")
-        print("\nNetwork architecture")
-        print(model.summary())
+        print("\nNetwork architecture \n", model.summary())
 
     else:
+        # Construct neural network
         model = ConstructModel()
-        print("Network architecture")
-        print(model.summary())
-    
+        print("Network architecture \n", model.summary())
+   
+        # Load data
         data = DH.ReadFiles(data_type1=1, data_type2=data_type2)
-        X = data[:,:10]
-        X_norm, norm_var = NormalizeInput(X, new_scheme=True, mean=None, std=None)
-        y = data[:,10]
+        X, y = data[:,:-1], data[:,-1]
+        X_norm, norm_var = NormalizeInput(X)
 
         # Defining training and validation sets
         X_trn, X_val, y_trn, y_val = train_test_split(X_norm,y)
+        X_boosted_trn, y_boosted_trn = Boosting(X_trn, y_trn, under_sample, over_sample)
 
-        X_boosted_trn, y_boosted_trn = Boosting(X_trn, y_trn, under_sample=0.01, over_sample=None)
-
-        print("Size of batch is", len(X_boosted_trn))
-
-
+    print("\nSize of batch is", len(X_boosted_trn))
     if train_network:
         print("Training network...")
-
         history, model = Train(model, X_boosted_trn, y_boosted_trn, X_val, y_val)
         print("Network trained!")
+
         if save_network:
             model.save("Trained_Model/Model")
             with open("Trained_Model/Model_History.pkl", "wb") as f:
@@ -394,7 +393,6 @@ def TrainANN(data_type2, under_sample=None, over_sample=None, load_network=False
             np.save("TrainedANN/x_val.npy", X_val)
             np.save("TrainedANN/y_val.npy", y_val)
             np.save("TrainedANN/NormVariables.npy", norm_var)
-
             print("Saved network, its history and training/validation sets in the directory TrainedANN")
 
         #y = model.predict(X_val)
@@ -402,19 +400,18 @@ def TrainANN(data_type2, under_sample=None, over_sample=None, load_network=False
         #print("pos points", np.sum(y), "out of", len(y))
 
     print("The baseline accuracy is", np.sum(y_val)/y_val.shape[0])
-    print("Number of points in validation set is", y_val.shape[0])
+    #print("Number of points in validation set is", y_val.shape[0])
 
-    print("\nConstructing training plots")
     PlotMetric(history, y_boosted_trn, y_val)
     #if not load_network:
         #PlotData(X_boosted_trn, y_boosted_trn, "Trained_Model/TrnDataPlot", plot_dist=False, read_data=read_data)
         #PlotData(X_val, y_val, "Trained_Model/ValDataPlot", plot_dist=False, read_data=read_data)
     
-    return None
+    return model, norm_var
 
-def Predict():
-    model = tf.keras.models.load_model("TrainedANN/Model")
-    norm_var = np.load("TrainedANN/NormVariables.npy")
+def Predict(model, norm_var):
+    #model = tf.keras.models.load_model("TrainedANN/Model")
+    #norm_var = np.load("TrainedANN/NormVariables.npy")
     mean, std = norm_var[0], norm_var[1]
 
     X = DH.ReadFreeParams(data_type1=2)

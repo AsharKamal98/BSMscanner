@@ -37,6 +37,17 @@ def InitializeDataFiles(data_type1):
 
     return
 
+def TempInitialize():
+    with open("DataFiles/DataFile_InParam", "w") as f:
+        f.write(f'{"IN PARAMETERS"} \n TEMP \n')
+
+def TempWrite(in_param_list):
+    with open("DataFiles/DataFile_InParam", "a") as f:
+        for i in range(len(in_param_list)):
+            f.writelines(f'{round(in_param_list[i],5):<{20}}')
+        f.writelines('\n')
+
+
 
 
 
@@ -278,7 +289,7 @@ def CreateSeperateLabels(l_col, l_gw, data_type2):
 
 def CheckCollConstr(spheno_output2, spheno_output3, higgsbounds_output, higgssignals_output):
         spheno_output2 = list(map(float, spheno_output2))
-        label_ST = 1 if DH.STellipse(S=spheno_output2[1], T=spheno_output2[0]) <= 1 else 0
+        label_ST = 1 if STellipse(S=spheno_output2[1], T=spheno_output2[0]) <= 1 else 0
         label_U = float(spheno_output3)
         label_HB = float(higgsbounds_output)
         label_HS = 1 if float(higgssignals_output[2])<pvalue_threshold else 0 #2nd element is the p-value

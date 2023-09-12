@@ -84,6 +84,38 @@ def WriteLabelsGW(transition_order, alpha, beta, fpeak, ompeak, STTn, STTp, dSTd
 def WriteEmptyLabelsGW(transition_order, data_type1):
     WriteLabelsGW(transition_order,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, data_type1)
 
+            
+def SaveControlledPosPoints(data, data_type2):
+    # Find indicies of positive points in data
+    labels = np.array(data[:,-1])
+    pos_points_indicies = np.where(labels==1)[0]
+    pos_points_indicies = np.insert(pos_points_indicies, 0, [-2,-1]) #Insert two zeros at beginning
+
+    # Save free and fixed parameter values corresponding to positive points in FDataFiles
+    with open("DataFiles/PDataFile_FreeParam", "r") as f:
+        l = np.array(f.readlines())
+    with open("DataFiles/FDataFile_FreeParam", "w") as f:
+        f.writelines(l[pos_points_indicies+2])
+    with open("DataFiles/PDataFile_FixedParam", "r") as f:
+        l = np.array(f.readlines())
+    with open("DataFiles/FDataFile_FixedParam", "w") as f:
+        f.writelines(l[pos_points_indicies+2])
+
+    # Save results of positive points in FDataFiles
+    if data_type2=='both' or data_type2=='collider':
+        with open("DataFiles/PDataFile_Labels_Col", "r") as f:
+            l = np.array(f.readlines())
+        with open("DataFiles/FDataFile_Labels_Col", "w") as f:
+            f.writelines(l[pos_points_indicies+2])
+    if data_type2=='both' or data_type2=='cosmic':
+        with open("DataFiles/PDataFile_Labels_GW", "r") as f:
+            l = np.array(f.readlines())
+        with open("DataFiles/FDataFile_Labels_GW", "w") as f:
+            f.writelines(l[pos_points_indicies+2])
+
+
+
+
 
 ####################### READING DATA FILES #############################
 ########################################################################

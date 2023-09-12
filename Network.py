@@ -28,156 +28,6 @@ from UserInputPaths import *
 import DataHandling as DH 
 
 
-"""
-def PlotData(X, y, fig_name, plot_dist=False, read_data='both'):
-    '''
-    Plots data.
-    input
-    -----
-    X : Array?
-        (free) Input parameters
-    y : array?
-        Labels. 0/1 for negative/positive points. If plots_dist==True, elements are then
-        Strings describing which constraints they satisfy
-    fig_name : String
-        Name of figure. Currently only relevant for plot_dist==False
-    read_data : string
-        'both', 'cosmic' or 'collider. Currently only relevant for plot_dist==True
-    '''
-    data = np.c_[X,y]
-    #df = pd.DataFrame(data, columns=["$\\Lambda_1$", '\Lambda_2', '\lambda_1', '\lambda_2', '\lambda_3','\lambda_6', '\lambda_7', 'm_{\mathrm{N}_1}', 'm_{\mathrm{N}_2}', 'm_{\mathrm{C}}', 'Constraints'])
-    df = pd.DataFrame(data, columns=["$\\Lambda_1$", '$\\Lambda_2$', '$\\lambda_1$', '$\\lambda_2$', '$\\lambda_3$','$\\lambda_6$', '$\\lambda_7$', '$m_{\\mathrm{N}_1}$', '$m_{\\mathrm{N}_2}$', '$m_{\\mathrm{C}}$', 'Constraints'])
-    name_list=["\Lambda_1", '\Lambda_2', '\lambda_1', '\lambda_2', '\lambda_3','\lambda_6', '\lambda_7', 'm_{\mathrm{N}_1}', 'm_{\mathrm{N}_2}', 'm_{\mathrm{C}}']
-
-    if plot_dist:
-        if read_data=='collider':
-            param_names = df.columns.values[:-1]
-            for i in range(len(param_names)):
-                name = param_names[i]
-                name2=name_list[i]
-                df[name] = pd.to_numeric(df[name])
-                if i==len(param_names)-1:
-                    g = sns.displot(df, hue='Constraints', kind="kde", fill=True, bw_adjust=1, palette={"U" : 'green', "H" : 'blue', "STU" : 'red', "BG" : "black"}, hue_order=["U", "H", "STU", "BG"], x=name, legend=True, aspect=1)
-                    # Increase legend size and remove title
-                    legend = g._legend
-                    legend.set_title("")
-                    plt.setp(g._legend.get_texts(), fontsize=30)
-                    #plt.legend(["U","H","STU", "BG"], frameon=True, fontsize=20)
-                else:
-                    g = sns.displot(df, hue='Constraints', kind="kde", fill=True, bw_adjust=1, palette={"U" : 'green', "H" : 'blue', "STU" : 'red', "BG" : "black"}, hue_order=["U", "H", "STU", "BG"], x=name, legend=False, aspect=1)
-
-                #g.set_axis_labels(name,"", fontsize=20)
-                if i<=1:
-                    g.set_axis_labels(fr"${name2} \ [\mathrm{{GeV^2}}]$", "PDF", fontsize=20)
-                elif i <=6:
-                    g.set_axis_labels(fr"${name2}$", "PDF", fontsize=20)
-                else:
-                    g.set_axis_labels(fr"${name2} \ [\mathrm{{GeV}}]$", "PDF", fontsize=20)
-
-                #g.set(yticks=[])
-                plt.yticks(fontsize=11)
-                plt.xticks(fontsize=11)
-                #plt.title("{} Distribution".format(name), fontsize=25)
-                plt.title(fr"${name2} \ \mathrm{{Distribution}}$", fontsize=25)
-                #plt.show()
-                plt.savefig('TempPlots/HistDist_col{}.pdf'.format(i), bbox_inches="tight")
-
-
-        if read_data=='cosmic':
-            param_names = df.columns.values[:-1]
-            for i in range(len(param_names)):
-                name = param_names[i]
-                name2=name_list[i]
-                df[name] = pd.to_numeric(df[name])
-                if i==len(param_names)-1:
-                    g = sns.displot(df, hue='Constraints', kind="kde", fill=True, bw_adjust=0.8, palette={"S-FOPT" : 'dodgerblue', "D-FOPT" : "red", "FOPT" : 'orange', "BG" : "black"}, hue_order=['FOPT', "S-FOPT", 'D-FOPT', 'BG'], x=name, legend=True, aspect=1)
-                    # Increase legend size and remove title
-                    legend = g._legend
-                    legend.set_title("")
-                    plt.setp(g._legend.get_texts(), fontsize=30)
-                    #plt.legend(["FOPT","S-FOPT", "D-FOPT", "BG"], frameon=True, fontsize=20, loc='upper left')
-                else:
-                    g = sns.displot(df, hue='Constraints', kind="kde", fill=True, bw_adjust=0.8, palette={"S-FOPT" : 'dodgerblue', "D-FOPT" : "red", "FOPT" : 'orange', "BG" : "black"}, hue_order=['FOPT', "S-FOPT", 'D-FOPT', 'BG'], x=name, legend=False, aspect=1)
-
-                g.set_axis_labels(fr"${name}$","", fontsize=20)
-                if i<=1:
-                    g.set_axis_labels(fr"${name2} \ [\mathrm{{GeV^2}}]$", "PDF", fontsize=20)
-                elif i <=6:
-                    g.set_axis_labels(fr"${name2}$", "PDF", fontsize=20)
-                else:
-                    g.set_axis_labels(fr"${name2} \ [\mathrm{{GeV}}]$", "PDF", fontsize=20)
-
-                #g.set(yticks=[])
-                plt.xticks(fontsize=11)
-                plt.yticks(fontsize=11)
-                #plt.title("{} Distribution".format(name), fontsize=25)
-                plt.title(fr"${name2} \ \mathrm{{Distribution}}$", fontsize=25)
-                #plt.show()
-                plt.savefig('TempPlots/HistDist_cos{}.pdf'.format(i), bbox_inches="tight")
-
-
-    else:
-        sns.set_style("whitegrid");
-        sns.pairplot(df, hue='Constraints', plot_kws={"s": 2})
-        print("Saving plot")
-        plt.savefig('{}'.format(fig_name))
-        #plt.show()
-
-    return None
-
-def SpecialPlot(X, y, fig_name):
-    name_list=["\Lambda_1", '\Lambda_2', '\lambda_1', '\lambda_2', '\lambda_3','\lambda_6', '\lambda_7', 'm_{\mathrm{N}_1}', 'm_{\mathrm{N}_2}', 'm_{\mathrm{C}}']
-    data = np.c_[X,y]
-    
-    index = np.where(y=='DDFOPT')[0]
-    print(index)
-    print(X[index], y[index])
-    data1 = np.c_[X[index],y[index]]
-    print(data1)
-    df = pd.DataFrame(data, columns=["$\\Lambda_1$", '$\\Lambda_2$', '$\\lambda_1$', '$\\lambda_2$', '$\\lambda_3$','$\\lambda_6$', '$\\lambda_7$', '$m_{\\mathrm{N}_1}$', '$m_{\\mathrm{N}_2}$', '$m_{\\mathrm{C}}$', 'Constraints'])
-    df1 = pd.DataFrame(data1, columns=["$\\Lambda_1$", '$\\Lambda_2$', '$\\lambda_1$', '$\\lambda_2$', '$\\lambda_3$','$\\lambda_6$', '$\\lambda_7$', '$m_{\\mathrm{N}_1}$', '$m_{\\mathrm{N}_2}$', '$m_{\\mathrm{C}}$', 'Constraints'])
-    param_names = df.columns.values[:-1]
-    fig, axes = plt.subplots(9,5, figsize=(38,50))
-    pltNr = 0
-    #plt.rcParams['font.size'] = 28
-    for i in range(10):
-        nameX = param_names[i]
-        nameX2 = name_list[i]
-        df[nameX] = pd.to_numeric(df[nameX])
-        for j in range(10):
-            if j<=i:
-                continue
-            else:
-                nameY = param_names[j]
-                nameY2 = name_list[j]
-                df[nameY] = pd.to_numeric(df[nameY])
-                #sns.set_style("whitegrid");
-                Xaxis = (pltNr // 5) 
-                Yaxis = (pltNr % 5)
-                if pltNr == 44:
-                    leg=True
-                else:
-                    leg=False
-                #sns.scatterplot(df1, ax=axes[Xaxis,Yaxis], x=nameX, y=nameY, hue="Constraints", legend=False, size="Constraints", sizes={"DDFOPT" : 120}, palette={"DDFOPT" : "red"})
-                sns.scatterplot(df, ax=axes[Xaxis,Yaxis], x=nameX, y=nameY, hue="Constraints", legend=leg, size="Constraints", palette={"DDFOPT" : "red", "DFOPT" : "orange", "BG" : "grey"}, sizes={"DDFOPT" : 120, "DFOPT" : 15, "BG" : 15}, hue_order=['DFOPT', "BG", 'DDFOPT'])
-                if pltNr == 44:
-                    plt.legend(loc="upper right", fontsize="20")
-
-                #if i<=1:
-                #    g.set_axis_xlabels(fr"${nameX2} \ [\mathrm{{GeV^2}}]$", fontsize=20)
-                #elif i <=6:
-                #    g.set_axis_xlabels(fr"${nameX2}$", fontsize=20)
-                #else:
-                #    g.set_axis_xlabels(fr"${nameX2} \ [\mathrm{{GeV}}]$", fontsize=20)
-
-
-                pltNr += 1
-                #plt.show()
-
-    plt.savefig('{}.png'.format(fig_name))
-
-"""
-
 def Boosting(X, y, under_sample, over_sample):
     counter = Counter(y)
     print("Classes distribution before boosting", counter)
@@ -203,7 +53,7 @@ def Boosting(X, y, under_sample, over_sample):
 def ConstructModel():
     model = keras.Sequential(
             [
-                layers.Dense(60, activation="relu", name="layer1", input_shape=(10,),  kernel_regularizer=keras.regularizers.L1L2(0.001)),
+                layers.Dense(60, activation="relu", name="layer1", input_shape=(num_free_param,),  kernel_regularizer=keras.regularizers.L1L2(0.001)),
                 layers.Dense(60, activation="relu", name="layer2", kernel_regularizer=keras.regularizers.L1L2(0.001)),
                 layers.Dense(60, activation="relu", name="layer3",  kernel_regularizer=keras.regularizers.L1L2(0.001)),
                 layers.Dense(60, activation="relu", name="layer4",  kernel_regularizer=keras.regularizers.L1L2(0.001)),
@@ -352,7 +202,8 @@ def NormalizeInput(X, new_scheme=True, mean=None, std=None):
 
 
 def TrainANN(data_type2, under_sample, over_sample, load_network, train_network, save_network):
-    if load_network:
+    if load_network: 
+        print("Loading trained ANN model")
         model = tf.keras.models.load_model("TrainedANN/Model")
         with open("TrainedANN/Model_History.pkl", "rb") as f:
             history = pickle.load(f)
@@ -361,8 +212,7 @@ def TrainANN(data_type2, under_sample, over_sample, load_network, train_network,
         X_val = np.load("TrainedANN/x_val.npy")
         y_val = np.load("TrainedANN/y_val.npy")
         norm_var = np.load("TrainedANN/NormVariables.npy")
-        print("Loaded saved ANN model")
-        print("\nNetwork architecture \n", model.summary())
+        print(model.summary())
 
     else:
         # Construct neural network
@@ -385,8 +235,8 @@ def TrainANN(data_type2, under_sample, over_sample, load_network, train_network,
         print("Network trained!")
 
         if save_network:
-            model.save("Trained_Model/Model")
-            with open("Trained_Model/Model_History.pkl", "wb") as f:
+            model.save("TrainedANN/Model")
+            with open("TrainedANN/Model_History.pkl", "wb") as f:
                 pickle.dump(history, f)
             np.save("TrainedANN/x_train.npy", X_boosted_trn)
             np.save("TrainedANN/y_train.npy", y_boosted_trn)
@@ -424,7 +274,6 @@ def Predict(model, norm_var):
     return y
 
 
-#RunANN()
 
 
 

@@ -2,21 +2,19 @@ import numpy as np
 import pandas as pd
 import cmath
 
-################################################################ USET INPUT ########################################################
+############################################################### BSM DETAILS ########################################################
 #===================================================================================================================================
-model = "TSM"
-v = 246 # Fix! Read from LH. Also do not use in dataframe input
-num_in_param = 13  # Fix! Can be found from df
-num_free_param = 10  # Fix!
-num_h = 2
-num_hp = 3
-exp_num_training_points = 11 #18=22h, 9=24-36hh
+#model = "TSM"
+#v = 246 # Fix! Read from LH. Also do not use in dataframe input
+num_h = 2 # Fix
+num_hp = 3 # Fix
+exp_num_training_points = 1
 num_training_points = 2**(exp_num_training_points)
-exp_num_pred_points = 10
+exp_num_pred_points = 12
 num_pred_points = 2**(exp_num_pred_points)
 
 
-d = { \
+d_TSM = { \
     'Parameter name': ['lam1','lam2','lam3','lam4','lam5','lam6','lam7','lam8','lam9','lam10','lam11','mT','mS','mH','mC','mN1','mN2'], \
     'LesHouches number': [1,2,3,4,5,6,7,8,9,10,11,12,13,None,None,None,None], \
     'Range start' : [-5000, -5000, 0, 0, -3.5, -7.5, -13, None, None, -7, -3.5, None, None, 125.25, 200, 200, 200], \
@@ -25,6 +23,32 @@ d = { \
     }
 
 
+
+
+model = "THDM"
+
+d = { \
+
+    "Parameter name": ['M11','M22','M12','lam1','lam2','lam3','lam4','lam5','TanBeta','mC','mA','mh','mH', 'v1', 'v2'], \
+
+    "LesHouches number": [1, 2, 3, 4, 5, 6, 7, 8, 9, None, None, None, None, None, None], \
+
+    "Range start" : [None, None, None, -5, -5, None, None, None, 1,  100,  100,  125.25, 100, None, None], \
+
+    "Range end" :   [None, None, None,  5,  5, None, None, None, 1, 2000, 2000, 125.25, 2000, None, None], \
+
+    "Dependence" : ["(-2*lam1*v1**3 - 2*M12*v2 - (lam3+lam4+2*lam5)*v1*v2**2)/(2*v1)",
+                    "(-2*M12*v1 - 2*lam2*v2**3 - (lam3+lam4+2*lam5)*v1**2*v2)/(2*v2)", \
+                    "(v1*v2*(-mh**2-mH**2+2*lam1*v1**2+2*lam2*v2**2))/(v1**2+v2**2)", 
+                    None, None, 
+                    "2*lam1 - (-2*mC**2+mh**2+mH**2+2*(lam1-lam2)*v2**2)/(v1**2+v2**2) - \
+                    cmath.sqrt(((-mh**2*v1**2 + 2*lam1*v1**4 + mH**2*v2**2 - 2*lam2*v2**4) * (mH**2*v1**2 - 2*lam1*v1**4 - mh**2*v2**2 + 2*lam2*v2**4))/(v1**2*v2**2*(v1**2+v2**2)**2))",
+                    "(mA**2-2*mC**2+mh**2+mH**2-2*lam1*v1**2-2*lam2*v2**2)/(v1**2+v2**2)",
+                    "(-mA**2+mh**2+mH**2-2*lam1*v1**2-2*lam2*v2**2)/(2*(v1**2+v2**2))",
+                    None, None, None, None, None, "vSM*np.cos(np.arctan(TanBeta))", "vSM*np.sin(np.arctan(TanBeta))"], \
+    "Solve order" : [3, 3, 2, None, None, 2, 2, 2, None, None, None, None, None, 1, 1]
+
+    }
 
 
 
@@ -52,33 +76,58 @@ omega_exp=-16
 
 #################################################### Pandas Data Frames ########################################################
 #================================================================================================================================
-import sys
 
 # Create data fran of user input data
 df = pd.DataFrame(data=d)
 
 # Free parameters spanning parameter space for sampling
 df_free_param = df[(~df["Range start"].isna()) & (df["Range start"] != df["Range end"])]
-free_param_names = df_free_param["Parameter name"].to_numpy()
-free_param_ranges = df_free_param[["Range start", "Range end"]].to_numpy()
 series_free_param = df_free_param["Parameter name"]
+free_param_ranges = df_free_param[["Range start", "Range end"]].to_numpy()
+num_free_param = series_free_param.size
 
 # First set of fixed variables: variables fixed at a constant value
-df_fixed_param1 = df[(~df["Range start"].isna()) & (df["Range start"] == df["Range end"])]
-dict_fixed_param1 = df_fixed_param1.set_index("Parameter name")["Range start"].to_dict()
-dict_fixed_param1["cmath"] = cmath
-dict_fixed_param1["v"] = v
+df_const_param = df[(~df["Range start"].isna()) & (df["Range start"] == df["Range end"])]
+dict_const_param = df_const_param.set_index("Parameter name")["Range start"].to_dict()
+dict_const_param["cmath"] = cmath
+dict_const_param["vSM"] = 246
+dict_const_param["np.arctan"] = np.arctan
+dict_const_param["np.cos"] = np.cos
+dict_const_param["np.sin"] = np.sin
+
+#dict_const_param["v1"] = v1
+#dict_const_param["v2"] = v2
 
 # Second set of fixed variables: variable values fixed by the free variable values
-df_fixed_param2 = df[df["Range start"].isna()]
-fixed_param2_names = df_fixed_param2["Parameter name"].to_numpy()
-fixed_param2_dependicies = df_fixed_param2["Dependence"].to_numpy()
+df_dep_param = df[df["Range start"].isna()]
+num_inversions = int(df_dep_param["Solve order"].max())
+dep_param_names = []
+dep_param_dependicies = []
+for i in range(num_inversions):
+    dep_param_names.append(df_dep_param[df_dep_param["Solve order"]==i+1]["Parameter name"].tolist())
+    dep_param_dependicies.append(df_dep_param[df_dep_param["Solve order"]==i+1]["Dependence"].tolist())
+
+
+#dep_param_names = df_dep_param["Parameter name"].to_numpy()
+#dep_param_dependicies = df_dep_param["Dependence"].to_numpy()
+
+# Temporary, THDM specific
+#df_fixed_param3 = df_dep_param.loc[[2,5,6,7]]
+#fixed_param3_names = df_fixed_param3["Parameter name"].to_numpy()
+#fixed_param3_dependicies = df_fixed_param3["Dependence"].to_numpy()
+
+#df_fixed_param4 = df_dep_param.loc[[0,1]]
+#fixed_param4_names = df_fixed_param4["Parameter name"].to_numpy()
+#fixed_param4_dependicies = df_fixed_param4["Dependence"].to_numpy()
 
 # Combining data frames for fixed variables
-df_fixed_param = pd.concat([df_fixed_param1, df_fixed_param2], axis=0)
+df_fixed_param = pd.concat([df_const_param, df_dep_param], axis=0)
 series_fixed_param = df_fixed_param["Parameter name"]
 
 # Input parameters to SPheno (LesHouches). Different from free parameters.
 df_in_param = df[~df["LesHouches number"].isna()]
 series_in_param = df_in_param["Parameter name"]
+num_in_param = series_in_param.size
+
+print(num_free_param)
 

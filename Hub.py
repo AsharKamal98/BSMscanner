@@ -5,6 +5,7 @@ from UserInput import *
 from UserInputPaths import *
 
 import cmath
+import numpy as np
 from tqdm import tqdm
 import subprocess
 
@@ -97,7 +98,7 @@ def SearchGrid(construct_collider_data, construct_cosmic_data, keep_old_trn_data
         print("Network has predicted", np.sum(predictions), "positive points out of", predictions.shape[0], "points\n")
 
 
-    #------------PREDICTIONS ARE CONTROLLED----------------
+    #---------------PREDICTIONS ARE CONTROLLED------------------
         if network_controls:
             # Read Input parameters required for analysis.
             with open("DataFiles/PDataFile_FreeParam", "r") as f:
@@ -113,7 +114,6 @@ def SearchGrid(construct_collider_data, construct_cosmic_data, keep_old_trn_data
             l3_pos = l3[pos_prediction_indicies+2]
 
             print("\nControlling positively predicted points")
-            # For loop over all positively predicted points
             for i in tqdm(range(len(l1_pos))):
                 free_param_list = [np.float64(item) for item in l1_pos[i].split()]
                 fixed_param_list = [np.float64(item) for item in l2_pos[i].split()]
@@ -132,33 +132,10 @@ def SearchGrid(construct_collider_data, construct_cosmic_data, keep_old_trn_data
                     else:
                         DH.WriteEmptyLabelsGW(transition_order=3, data_type1=2)
 
-
-
-            # Read controlled points. Find indicies of positive points.
+            # Save real positive points from the predicted positive points.
             data = DH.ReadFiles(data_type1=2, data_type2=data_type2)
-            labels = np.array(data[:,-1])
-            pos_points_indicies = np.where(labels==1)[0]
-            pos_points_indicies = np.insert(pos_points_indicies, 0, [-2,-1]) #Insert two zeros at beginning
-
             DH.InitializeDataFiles(data_type1=3)
-            with open("DataFiles/PDataFile_FreeParam", "r") as f:
-                l = np.array(f.readlines())
-            with open("DataFiles/FDataFile_FreeParam", "w") as f:
-                f.writelines(l[pos_points_indicies+2])
-            with open("DataFiles/PDataFile_FixedParam", "r") as f:
-                l = np.array(f.readlines())
-            with open("DataFiles/FDataFile_FixedParam", "w") as f:
-                f.writelines(l[pos_points_indicies+2])
-            if data_type2=='both' or data_type2=='collider':
-                with open("DataFiles/PDataFile_Labels_Col", "r") as f:
-                    l = np.array(f.readlines())
-                with open("DataFiles/FDataFile_Labels_Col", "w") as f:
-                    f.writelines(l[pos_points_indicies+2])
-            if data_type2=='both' or data_type2=='cosmic':
-                with open("DataFiles/PDataFile_Labels_GW", "r") as f:
-                    l = np.array(f.readlines())
-                with open("DataFiles/FDataFile_Labels_GW", "w") as f:
-                    f.writelines(l[pos_points_indicies+2])
+            DH.SaveControlledPosPoints(data, data_type2)
 
             #data = DH.ReadFiles(data_type1=3, data_type2=data_type2)
             #print("Constructing plot of all accumulated positive points")
@@ -167,26 +144,64 @@ def SearchGrid(construct_collider_data, construct_cosmic_data, keep_old_trn_data
 
 
 def EvalFcn(sample):
-    # Dictionaries containing variables (names) and corresponding values
-    dict_free_param = {param_name: sample_value for param_name, sample_value in zip(free_param_names, sample)}
-    #dict_fixed_param1 defined globally in UserInput
-    dict_fixed_param2 = {param_name: eval(dependency, dict_free_param | dict_fixed_param1) for param_name, dependency in zip(fixed_param2_names, fixed_param2_dependicies)}
+    #sample = [-0.015802979469299316, -2.9742057621479034, 1205.37401, 292.85787, 309.65887]
 
-    ########### Specific to TC #########
-    lam8,lam9,mT,mS = list(dict_fixed_param2.values())
-    if round(lam8.imag,5) > 0:
-        return None, None, None
-    else:
-        dict_fixed_param2["lam8"] = lam8.real
-    if mT<0 or mS<0:
-        return None, None, None
+    # Dictionaries containing variables (names) and corresponding values
+    dict_free_param = {param_name: sample_value for param_name, sample_value in zip(series_free_param, sample)}
+    #dict_const_param defined globally in UserInput
+    #dict_dep_param = {param_name: eval(dependency, dict_free_param | dict_const_param) for param_name, dependency in zip(series_dep_param, dep_param_dependicies)}
+
+    dict_dep_param = {}
+    for i in range(num_inversions):
+        print(i)
+        for param_name, dependency in zip (dep_param_names[i], dep_param_dependicies[i]):
+            print(param_name)
+            dict_dep_param[param_name] = eval(dependency, globals(), dict_free_param | dict_const_param | dict_dep_param)
+
+    ########### THDM Specific ##########
+        if i==1:
+            lam3 = dict_dep_param["lam3"]
+            if abs(round(lam3.imag,5)) > 0:
+                print("Complex lam3")
+                return None, None, None
+            else:
+                dict_dep_param["lam3"] = lam3.real
     ####################################
 
-    d = dict_free_param | dict_fixed_param1 | dict_fixed_param2
 
+    ############ THDM Specific ###############
+    #dict_fixed_param3 = {param_name: eval(dependency, dict_free_param | dict_const_param) for param_name, dependency in zip(fixed_param3_names, fixed_param3_dependicies)}
+    #M12,lam3,lam4,lam5 = list(dict_fixed_param3.values())
+    #lam3 = dict_dep_param["lam3"]
+    #if abs(round(lam3.imag,5)) > 0:
+    #    print("########################################################################################################")
+    #    return None, None, None
+    #else:
+    #    dict_dep_param["lam3"] = lam3.real
+    #if abs(round(M12.imag,5)) > 0 or abs(round(lam3.imag,5)) > 0 or abs(round(lam4.imag,5)) > 0 or abs(round(lam5.imag,5)) > 0:
+    #    sys.exit("Complex couplings")
+
+    #dict_fixed_param4 = {param_name: eval(dependency, dict_free_param | dict_const_param | dict_fixed_param3) for param_name, dependency in zip(fixed_param4_names, fixed_param4_dependicies)}
+    #dict_dep_param = dict_fixed_param3 | dict_fixed_param4
+    #########################################
+
+    ########### Specific to TC ###########
+    #lam8,lam9,mT,mS = list(dict_fixed_param2.values())
+    #if round(lam8.imag,5) > 0:     # Add abs
+    #    return None, None, None
+    #else:
+    #    dict_fixed_param2["lam8"] = lam8.real
+    #if mT<0 or mS<0:
+    #    return None, None, None
+    ######################################
+
+
+    d = dict_free_param | dict_const_param | dict_dep_param
     in_param_list = series_in_param.map(d).tolist()
-    free_param_list = series_free_param.map(d).tolist()
+    free_param_list = series_free_param.map(d).tolist() # Note, this is the sample variable
     fixed_param_list = series_fixed_param.map(d).tolist()
+
+    print(d)
 
     return in_param_list, free_param_list, fixed_param_list
 
@@ -195,15 +210,15 @@ def EvalFcn(sample):
 
 
 SearchGrid(
-        construct_collider_data=False,
+        construct_collider_data=True,
         construct_cosmic_data=False,
-        keep_old_trn_data=True,    # Only set to True if data files already contain data
+        keep_old_trn_data=False,    # Only set to True if data files already contain data
         data_type2='collider', # 'collider','cosmic','both'
-        train_network=True,
+        train_network=False,
         load_network=False,
         save_network=False,  # only saved network loads for predictions, fix!
-        network_predicts=True,
-        network_controls=True,
+        network_predicts=False,
+        network_controls=False,
         sampling_method=1,   # 1=sobol sequence, 2=InDataFile
         optimize=True
         )

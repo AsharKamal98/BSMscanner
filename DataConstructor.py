@@ -15,7 +15,7 @@ from UserInputPaths import *
 import DataHandling as DH
 sys.path.insert(0, CT_path)
 from LS_TColor_DRPython import LS_TColor, nVevs
-#from gwFuns import *
+from gwFuns import *
 
 def AnalysisCollider(in_param_list, data_type1, optimize):
 
@@ -182,9 +182,8 @@ def Sampling2():    # NOT USED
 
 
 def RunSPheno(model):
-    #subprocess.run(["./{}/bin/SPheno{}".format(SPheno_path, model)], stdout=subprocess.DEVNULL)
-    subprocess.run(["bash", "ShellScripts/RunSPheno.sh", SPheno_path, model], stdout=subprocess.DEVNULL)
-    #subprocess.run(["./bin/SPheno{}".format(model)])
+    #subprocess.run(["bash", "ShellScripts/RunSPheno.sh", SPheno_path, model], stdout=subprocess.DEVNULL)
+    subprocess.run(["bash", "ShellScripts/RunSPheno.sh", SPheno_path, model])
     return None
 
 def ReadSPheno():

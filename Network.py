@@ -133,7 +133,8 @@ def PlotMetric(history,y_trn,y_val):
         avg_val_FP, Elist = average(val_FP, epoch_Mlist=True)
 
 
-    print("\nLoss:", round(history['loss'][-1], 5), "      Val Loss:", round(history['val_loss'][-1], 5))
+    print("\nNeural network training summary")
+    print("Loss:", round(history['loss'][-1], 5), "      Val Loss:", round(history['val_loss'][-1], 5))
     print("Accuracy", round(history[keys[1]][-1], 4), "       Val Accuracy", round(history[keys[5]][-1], 4))
     print("Efficiency", round(avg_Efficiency[-1], 4), "       Val Efficiency", round(avg_val_Efficiency[-1], 4))
     print("Exhaustiveness", round(avg_Exhaustiveness[-1], 4), "       Val Exhaustiveness", round(avg_val_Exhaustiveness[-1], 4))
@@ -157,7 +158,7 @@ def PlotMetric(history,y_trn,y_val):
 
     plt.plot(Elist, avg_Efficiency, linestyle=':', color='blue', label="Efficiency")
     plt.plot(Elist, avg_val_Efficiency, linestyle=':', color='red', label="Val Efficiency")
-    plt.ylim(-0.001,0.03)
+    plt.ylim(-0.001,1.0)
     plt.legend()
     #plt.show()
     plt.savefig('TrainedANN/EfficiencyPlot.pdf')
@@ -203,7 +204,7 @@ def NormalizeInput(X, new_scheme=True, mean=None, std=None):
 
 def TrainANN(data_type2, under_sample, over_sample, load_network, train_network, save_network):
     if load_network: 
-        print("Loading trained ANN model")
+        print("Load trained neural network")
         model = tf.keras.models.load_model("TrainedANN/Model")
         with open("TrainedANN/Model_History.pkl", "rb") as f:
             history = pickle.load(f)
@@ -212,12 +213,13 @@ def TrainANN(data_type2, under_sample, over_sample, load_network, train_network,
         X_val = np.load("TrainedANN/x_val.npy")
         y_val = np.load("TrainedANN/y_val.npy")
         norm_var = np.load("TrainedANN/NormVariables.npy")
-        print(model.summary())
+        #print(model.summary())
 
     else:
         # Construct neural network
         model = ConstructModel()
-        print("Network architecture \n", model.summary())
+        #print("\nNetwork architecture")
+        #print(model.summary())
    
         # Load data
         data = DH.ReadFiles(data_type1=1, data_type2=data_type2)
@@ -228,7 +230,7 @@ def TrainANN(data_type2, under_sample, over_sample, load_network, train_network,
         X_trn, X_val, y_trn, y_val = train_test_split(X_norm,y)
         X_boosted_trn, y_boosted_trn = Boosting(X_trn, y_trn, under_sample, over_sample)
 
-    print("\nSize of batch is", len(X_boosted_trn))
+    #print("\nSize of batch is", len(X_boosted_trn))
     if train_network:
         print("Training network...")
         history, model = Train(model, X_boosted_trn, y_boosted_trn, X_val, y_val)
@@ -259,15 +261,14 @@ def TrainANN(data_type2, under_sample, over_sample, load_network, train_network,
     
     return model, norm_var
 
-def Predict(model, norm_var):
+def Predict(model, norm_var, X):
     #model = tf.keras.models.load_model("TrainedANN/Model")
     #norm_var = np.load("TrainedANN/NormVariables.npy")
     mean, std = norm_var[0], norm_var[1]
 
-    X = DH.ReadFreeParams(data_type1=2)
+    #X = DH.ReadFreeParams(data_type1=2)
     X_norm = NormalizeInput(X, new_scheme=False, mean=mean, std=std)
 
-    print("\nNetwork is making predictions")
     y = model.predict(X_norm)
     y = [1 if item > 0.5 else 0 for item in y]
 

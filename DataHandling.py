@@ -11,7 +11,6 @@ from UserInput import *
 ####################### INITIALIZING DATA FILES ########################
 ########################################################################
 
-prefixes = ["T","P","F"]
 def InitializeDataFiles(data_type1):
     subprocess.run(["mkdir", "-p", "DataFiles"]) 
 
@@ -37,11 +36,11 @@ def InitializeDataFiles(data_type1):
 
     return
 
-def TempInitialize():
+def TempInitialize():           #Not being used
     with open("DataFiles/DataFile_InParam", "w") as f:
         f.write(f'{"IN PARAMETERS"} \n TEMP \n')
 
-def TempWrite(in_param_list):
+def TempWrite(in_param_list):   #Not being used
     with open("DataFiles/DataFile_InParam", "a") as f:
         for i in range(len(in_param_list)):
             f.writelines(f'{round(in_param_list[i],5):<{20}}')
@@ -56,28 +55,28 @@ def TempWrite(in_param_list):
 
 def WriteFreeParam(free_param_list, data_type1):
     prefix = prefixes[data_type1-1]
-    with open("DataFiles/{}DataFile_FreeParam".format(prefix), "a") as f:
+    with open("../../DataFiles/{}DataFile_FreeParam".format(prefix), "a") as f:
         for i in range(len(free_param_list)):
             f.writelines(f'{round(free_param_list[i],5):<{20}}')
         f.writelines('\n')
 
 def WriteFixedParam(fixed_param_list, data_type1):
     prefix = prefixes[data_type1-1]
-    with open("DataFiles/{}DataFile_FixedParam".format(prefix), "a") as f:
+    with open("../../DataFiles/{}DataFile_FixedParam".format(prefix), "a") as f:
         for i in range(len(fixed_param_list)):
             f.writelines(f'{round(fixed_param_list[i],5):<{20}}')
         f.writelines('\n')
 
 def WriteLabelsCol(successful_run, spheno_output2, spheno_output3, higgsbounds_output, higgssignals_output, data_type1): 
     prefix = prefixes[data_type1-1]
-    with open("DataFiles/{}DataFile_Labels_Col".format(prefix), "a") as f:
+    with open("../../DataFiles/{}DataFile_Labels_Col".format(prefix), "a") as f:
         for i in range(3):
             f.writelines(f'{spheno_output2[i]:<{20}}')
         f.writelines(f'{spheno_output3:<{20}} {higgsbounds_output:<{20}} {higgssignals_output[0]:<{20}} {higgssignals_output[1]:<{20}} {higgssignals_output[2]:<{20}} {successful_run:<{20}} \n')
 
 def WriteLabelsGW(transition_order, alpha, beta, fpeak, ompeak, STTn, STTp, dSTdTTn, dSTdTTp, Tc, Tn, Tp, low_vev, high_vev, dV, dVdT, action, data_type1): 
     prefix = prefixes[data_type1-1]
-    with open("DataFiles/{}DataFile_Labels_GW".format(prefix), "a") as f:
+    with open("../../DataFiles/{}DataFile_Labels_GW".format(prefix), "a") as f:
         f.writelines(f'{transition_order:<{20}} {alpha:<{20}} {beta:<{20}} {fpeak:<{20}} {ompeak:<{20}} {STTn:<{20}} {STTp:<{20}} {dSTdTTn:<{20}} {dSTdTTp:<{20}} {Tc:<{20}} {Tn:<{20}} {Tp:<{20}} {low_vev:<{20}} {high_vev:<{20}} {dV:<{20}} {dVdT:<{20}} {action:<{20}} \n')
 
 
@@ -120,9 +119,9 @@ def SaveControlledPosPoints(data, data_type2):
 ####################### READING DATA FILES #############################
 ########################################################################
 
-def ReadFiles(data_type1, data_type2):
+def ReadFiles(data_type1, data_type2, seperate_labels=False, print_summary=True):
     '''
-    Function reads data and creates labels of the results. Returns
+    Function reads data (free parameters) and creates labels of the results. Returns
     a 2D array with each row representing a point in parameter space.
     All columns except last one  represent free parameters. Last column
     represents the label of that point. 
@@ -149,8 +148,13 @@ def ReadFiles(data_type1, data_type2):
     if data_type2=='both' or data_type2=='cosmic':
         with open("DataFiles/{}DataFile_Labels_GW".format(prefix), "r") as f:
             l_gw = f.readlines()
-    labels = CreateSingleLabel(l_col, l_gw, data_type2) 
-    data = np.c_[free_param_list, labels]
+    
+    if seperate_labels:
+        X, labels = CreateSeperateLabels(l_col, l_gw, data_type2, free_param_list, print_summary)
+        data = np.c_[X, labels]
+    else:
+        labels = CreateSingleLabel(l_col, l_gw, data_type2, print_summary) 
+        data = np.c_[free_param_list, labels]
 
     return data
 
@@ -164,7 +168,7 @@ def ReadFreeParams(data_type1):
     with open("DataFiles/{}DataFile_FreeParam".format(prefix), "r") as f:
         l = f.readlines() 
     if len(l) < 3:
-        sys.exit("Erorr: found empty data file when attempting to read. data_type1 = {}".format(data_type1))
+        sys.exit("WARNING: found empty data file when attempting to read {}DataFiles. Exiting.".format(prefix))
 
     free_param_list = np.array([l[i].split() for i in range(2,len(l))], dtype=object)
     free_param_list = free_param_list.astype(np.float64)                                
@@ -180,7 +184,7 @@ def ReadFreeParams(data_type1):
 ############ CREATING LABELS FOR ANN TRAINING / PLOTTING ###############
 ########################################################################
 
-def CreateLabels(l_col, l_gw, data_type2, X=None): # X not used currently
+def CreateLabels(l_col, l_gw, data_type2, print_summary):
     """ 
     Given collider and cosmic data, the function creates labels used by the
     network. '1' = good points, '0' = bad point.
@@ -202,6 +206,9 @@ def CreateLabels(l_col, l_gw, data_type2, X=None): # X not used currently
     list of labels for each constraint, where label_X[i] = 1 means
     that point i satisfies constraint X, 0 else.
     """
+    
+    if print_summary:
+        print("\nData summary")
 
     # Create labels for each constraint seperately
     if data_type2=='both' or data_type2=='collider':
@@ -213,16 +220,18 @@ def CreateLabels(l_col, l_gw, data_type2, X=None): # X not used currently
         Unitarity =  np.array([l_col[i].split()[3] for i in range(2,len(l_col))])
         Unitarity = Unitarity.astype(np.float64)
 
-        labels_HBS = [1 if (item[0]==1 and item[1] < pvalue_threshold) else 0 for item in HBS]
-        labels_ST = [1 if STellipse(item[1],item[0]) <= 1 else 0 for item in ST]
-        labels_Unitarity = [int(item) for item in Unitarity]
-
-        print("Number of points satisfying Unitarity constraints:", np.sum(labels_Unitarity))
-        print("Number of points satisfying S and T param simultaneously:", np.sum(labels_ST))
-        print("Number of points satisfying HiggsBounds and HiggsSignals:", np.sum(labels_HBS))
-
+        labels_HBS = np.array([1 if (item[0]==1 and item[1] < pvalue_threshold) else 0 for item in HBS])
+        #labels_HBS = np.ones(labels_HBS.shape[0])
+        labels_ST = np.array([1 if STellipse(item[1],item[0]) <= 1 else 0 for item in ST])
+        #labels_Unitarity = np.array([int(item) for item in Unitarity])
+        labels_Unitarity = np.ones(labels_HBS.shape[0])
         labels_col = np.multiply(np.multiply(labels_HBS, labels_ST), labels_Unitarity)
-        print("Number of points satisfying collider constraints:", np.sum(labels_col))
+
+        if print_summary:
+            print("Number of points satisfying Unitarity constraints:", np.sum(labels_Unitarity))
+            print("Number of points satisfying S and T param simultaneously:", np.sum(labels_ST))
+            print("Number of points satisfying HiggsBounds and HiggsSignals:", np.sum(labels_HBS))
+            print("Number of points satisfying collider constraints:", np.sum(labels_col))
 
     if data_type2=='both' or data_type2=='cosmic':
         PTO = np.array([l_gw[i].split()[0] for i in range(2,len(l_gw))])
@@ -240,13 +249,13 @@ def CreateLabels(l_col, l_gw, data_type2, X=None): # X not used currently
         labels_PTO = [1 if item == 1 else 0 for item in PTO]
         labels_omega = [1 if item>10**(omega_exp) else 0 for item in omega]
         labels_strongPT = [1 if abs(item)>1 else 0 for item in strongPT_criteria]
-
-        print("Number of points giving first-order phase transitions", np.sum(labels_PTO))
-        print("Number of points giving detectable first-order phase transitions", np.sum(labels_omega))
-        print("Number of points giving strong first-order phase transitions", np.sum(labels_strongPT))
-
         labels_GW = np.multiply(np.multiply(labels_PTO, labels_omega), labels_strongPT)
-        print("Number of points satisfying cosmic constraints", np.sum(labels_GW))
+
+        if print_summary:
+            print("Number of points giving first-order phase transitions", np.sum(labels_PTO))
+            print("Number of points giving detectable first-order phase transitions", np.sum(labels_omega))
+            print("Number of points giving strong first-order phase transitions", np.sum(labels_strongPT))
+            print("Number of points satisfying cosmic constraints", np.sum(labels_GW))
 
 
     # Temporary
@@ -266,57 +275,68 @@ def CreateLabels(l_col, l_gw, data_type2, X=None): # X not used currently
         return labels_Unitarity, labels_ST, labels_HBS, labels_PTO, labels_omega, labels_strongPT
 
 
-def CreateSingleLabel(l_col, l_gw, data_type2):
+def CreateSingleLabel(l_col, l_gw, data_type2, print_summary=True):
     """ Creates a single label for each data point. Combines the label lists for each induvidual
     constraint in CreateLabels() to one single label list. labels[i] = 1 means that point i
     satisfies all constraints.
     INPUT: See above """
 
-    labels_all = CreateLabels(l_col, l_gw, data_type2)
+    labels_all = CreateLabels(l_col, l_gw, data_type2, print_summary)
     labels = reduce(np.multiply, labels_all)
-    print("Number of points in positive class:", sum(labels), "and in negative class:", len(labels)-sum(labels), "\n")
+    if print_summary:
+        print("Number of points in positive class:", sum(labels), "and in negative class:", len(labels)-sum(labels), "\n")
     return labels
 
 
-def CreateSeperateLabels(l_col, l_gw, data_type2):
+def CreateSeperateLabels(l_col, l_gw, data_type2, X, print_summary=True):
     """ Rewrites the different label lists from CreateLabels to one single label list.
     Each element is a string describing which constraint the corresponding points satisfies.
     Same point may appear several times if multiple constraints are satisfied simultaneously
     by a point. Used for plotting purposes. """
 
+    if data_type2=='collider':
+        labels_Unitarity, labels_ST, labels_HBS = CreateLabels(l_col, l_gw, data_type2, print_summary)
+    elif data_type2=='cosmic':
+        labels_PTO, labels_omega, labels_strongPT = CreateLabels(l_col, l_gw, data_type2, print_summary)
+    elif data_type2=='both':
+        labels_Unitarity, labels_ST, labels_HBS, labels_PTO, labels_omega, labels_strongPT = CreateLabels(l_col, l_gw, data_type2, print_summary)
+
+
     X_new=[]
     labels=[]
-
-    if data_type2=='collider': 
-        labels_Unitarity, labels_ST, labels_HBS = CreateLabels(l_col, l_gw, data_type2)
+    if data_type2=='collider' or data_type2=='both': 
         for i in range(len(labels_Unitarity)):
             if labels_Unitarity[i]==1:
-                labels.append("U")
+                labels.append(1)
                 X_new.append(X[i])
             if labels_HBS[i]==1:
-                labels.append("H")
+                labels.append(2)
                 X_new.append(X[i])
             if labels_ST[i]==1:
-                labels.append("STU")
+                labels.append(3)
                 X_new.append(X[i])
-            labels.append("BG")
-            X_new.append(X[i])
-
-    elif data_type2=='cosmic':
+            #labels.append(0)
+            #X_new.append(X[i])
+    if data_type2=='cosmic' or data_type2=='both':
         for i in range(len(labels_PTO)):
             if labels_PTO[i]==1:
-                labels.append("FOPT")
+                labels.append(4)
                 X_new.append(X[i])
             if labels_strong[i]==1:
-                labels.append("S-FOPT")
+                labels.append(5)
                 X_new.append(X[i])
             if labels_omega[i]==1:
-                labels.append("D-FOPT")
+                labels.append(6)
                 X_new.append(X[i])
-            labels.append("BG")
-            X_new.append(X[i])
+            #labels.append("BG")
+            #X_new.append(X[i])
 
-    return labels, X_new
+    return np.array(X_new), np.array(labels)
+
+
+def ConvertLabels(d,labels):
+    return np.zeros(labels.shape[0])
+    return np.array([*map(d.get, labels)])
 
 
 def CheckCollConstr(spheno_output2, spheno_output3, higgsbounds_output, higgssignals_output):

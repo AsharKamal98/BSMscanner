@@ -1,9 +1,9 @@
 #!/bin/bash
 
-cd $1
+#cd $1
 
-prefix='../../SPheno-4.0.5/'
-
+#prefix='../../SPheno-4.0.5/'
+prefix='./'
 #nH='3'
 #nHplus='1'
 
@@ -16,7 +16,7 @@ uncertainty='2'
 whichinput='effC'   # whichinput can be 'part', 'hadr' or 'effC'
 
 # echo ./HiggsSignals $expdata $chi2method $uncertainty $whichinput $nH $nHplus $prefix
-./HiggsSignals $expdata $uncertainty $whichinput $nH $nHplus $prefix &> /dev/null 
+$1/HiggsSignals $expdata $uncertainty $whichinput $nH $nHplus $prefix &> /dev/null 
 
 #echo ' **************************************************'
 #echo ' The output files are'

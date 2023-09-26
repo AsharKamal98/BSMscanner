@@ -1,8 +1,9 @@
 #!/bin/bash
 
-cd $1
+#cd $1
 
-prefix='../../SPheno-4.0.5/'
+#prefix='../../SPheno-4.0.5/'
+prefix='./'
 
 #nH='3'
 #nHplus='1'
@@ -14,7 +15,7 @@ whichinput='effC'   # whichinput can be 'part', 'hadr' or 'effC'
 whichanalyses='LandH'   # whichanalyses can be 'LandH', 'onlyL', 'onlyH' or 'onlyP' 
 
 # echo ./HiggsBounds $whichanalyses $whichinput $nH $nHplus $prefix
-./HiggsBounds $whichanalyses $whichinput $nH $nHplus $prefix &> /dev/null
+$1/HiggsBounds $whichanalyses $whichinput $nH $nHplus $prefix &> /dev/null
 
 #echo ' **************************************************'
 #echo ' The output files are'

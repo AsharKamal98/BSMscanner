@@ -1,6 +1,9 @@
+# Import other files
 from UserInput import *
+from DerivedInput import *
 import DataHandling as DH
 
+# Import libraries
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -53,12 +56,12 @@ mpl.rcParams["figure.figsize"] = [8.5, 5.5]
 
 
 
-def PlotGrid(data_type1, data_type2, plot_seperate_constr, fig_name, print_summary):
+def PlotGrid(data_type1, data_type2, plot_seperate_constr, fig_name):
     """
     Add info
     """
 
-    data = DH.ReadFiles(data_type1, data_type2, plot_seperate_constr, print_summary)
+    data = DH.ReadFiles(data_type1, data_type2, plot_seperate_constr, print_summary=False)
     
     if plot_seperate_constr:
         dct = {1.0 : "U", 2.0 : "HBS", 3.0 : "STU"}
@@ -76,7 +79,7 @@ def PlotGrid(data_type1, data_type2, plot_seperate_constr, fig_name, print_summa
     sns.pairplot(df_plot, hue="Constraints", palette=palette, plot_kws={"s": 2})
 
     subprocess.run(["mkdir", "-p", "Figures"])
-    print("\nCreating Plot: {}".format(fig_name), "See Figures directory")
+    print("Creating Plot: {}".format(fig_name), "See Figures directory")
     plt.savefig('Figures/{}'.format(fig_name))
 
 

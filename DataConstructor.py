@@ -1,37 +1,39 @@
+# Import other files
+from UserInput import *
+from DerivedInput import *
+import DataHandling as DH
+#sys.path.insert(0, CT_path)
+#from LS_TColor_DRPython import LS_TColor, nVevs
+#from THDM_DRPython  import THDM, nVevs
+#from gwFuns import *
+
+# Import libraries
 import numpy as np
 import math
 from scipy.stats import qmc
 import pandas as pd
+
 import subprocess
 import sys
-
 import io
 from contextlib import redirect_stdout
 import contextlib
 import os
 
-from UserInput import *
-from UserInputPaths import *
-import DataHandling as DH
-sys.path.insert(0, CT_path)
-#from LS_TColor_DRPython import LS_TColor, nVevs
-#from THDM_DRPython  import THDM, nVevs
-#from gwFuns import *
 
 def AnalysisCollider(in_param_list, optimize):  # data_type1 not needed
 
     # Find MINPAR block in LesHouches file
-    InputFile = open(LesHouches_filename, "r")
-    l = InputFile.readlines()
+    with open(LesHouches_filename, "r") as f:
+        l = f.readlines()
     MINPARindex = [idx for idx, s in enumerate(l) if 'Block MINPAR' and '# Input' in s][0]
 
     # Define input parameters in LesHouches file
     for i in range(num_in_param):
         l[MINPARindex+1+i] = " {}   {}     # {}\n".format(i+1, in_param_list[i], l[MINPARindex+1+i].split()[-1])
 
-    InputFile = open(LesHouches_filename, "w")
-    InputFile.writelines(l)
-    InputFile.close()
+    with open(LesHouches_filename, "w") as f:
+        f.writelines(l)
 
     # Try running HEP packages
     try:
@@ -53,6 +55,8 @@ def AnalysisCollider(in_param_list, optimize):  # data_type1 not needed
         higgsbounds_output = 0
         higgssignals_output = [0,0,0]
         successful_run = 0
+        
+        sys.exit("Exiting")
 
     # Write label into data file
     #DH.WriteLabelsCol(successful_run, spheno_output2, spheno_output3, higgsbounds_output, higgssignals_output, data_type1)
@@ -189,8 +193,8 @@ def RunSPheno():
     return None
 
 def ReadSPheno():
-    OutputFile = open(SPheno_spc_filename, "r")
-    l = OutputFile.readlines()
+    with open(SPheno_spc_filename, "r") as f:
+        l = f.readlines()
 
     index1 = [idx for idx, s in enumerate(l) if 'Block MASS' in s][0]
     spheno_output1 = [l[index1+2+i].split()[1] for i in range(4)] # May use list comprehenseion over for loop!
@@ -201,7 +205,6 @@ def ReadSPheno():
     index3 = [idx for idx, s in enumerate(l) if 'Block TREELEVELUNITARITY' in s][0]
     spheno_output3 = l[index3+1].split()[1]
 
-    OutputFile.close()
     return spheno_output1, spheno_output2, spheno_output3
 
 def RunHiggsBounds():
@@ -213,22 +216,20 @@ def RunHiggsSignals():
     return None
 
 def ReadHiggsBounds():
-    OutputFile = open(HB_output_filename)
-    l = OutputFile.readlines()
+    with open(HB_output_filename) as f:
+        l = f.readlines()
     index1 = [idx for idx, s in enumerate(l) if '#cols' in s][0]
     index2 = l[index1].split().index("HBresult")
     higgsbounds_output = l[index1+2].split()[index2-1]
-    OutputFile.close()
     return higgsbounds_output
 
 def ReadHiggsSignals():
-    OutputFile = open(HS_output_filename)
-    l = OutputFile.readlines()
+    with open(HS_output_filename) as f:
+        l = f.readlines()
     index1 = [idx for idx, s in enumerate(l) if '#cols:' in s][0]
     index2 = l[index1].split().index("csq(mu)")
     higgssignals_output = [l[index1+2].split()[index2-1+i] for i in range(2)]
     higgssignals_output.append(l[index1+2].split()[11])
-    OutputFile.close()
     return higgssignals_output
 
 def RunCosmoTransitions(params):

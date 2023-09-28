@@ -1,31 +1,30 @@
-# IMPORT ANN libraries
+# Import other files
+from UserInput import *
+from DerivedInput import *
+import DataHandling as DH 
+
+# Import libraries
+import numpy as np
+import math
+import matplotlib.pyplot as plt
+import pickle
+import seaborn as sns
+import pandas as pd
+
 import os
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'    # Silence tensorflow warnings
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
 
 from collections import Counter
 from sklearn.datasets import make_classification
+from sklearn.model_selection import train_test_split
 from imblearn.over_sampling import SMOTE
 from imblearn.over_sampling import RandomOverSampler
 from imblearn.under_sampling import RandomUnderSampler
 
-# MATH AND OTHER
-import numpy as np
-import math
-import matplotlib.pyplot as plt
-import pickle
-from sklearn.model_selection import train_test_split
-import seaborn as sns
-import pandas as pd
-#from operator import itemgetter
 
-
-# OTHER SCRIPTS IN FRAMEWORK 
-from UserInput import *
-from UserInputPaths import *
-import DataHandling as DH 
 
 
 def Boosting(X, y, under_sample, over_sample):

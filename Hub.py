@@ -1,28 +1,33 @@
+# Import other files
 import DataConstructor as DC
 import DataHandling as DH
 import Network as NW
 import PlottingScript as PS
 from UserInput import *
-from UserInputPaths import *
+from DerivedInput import *
 
+# Import libraries
 import cmath
 import numpy as np
 from tqdm import tqdm
+
 import subprocess
 import sys
-
 import os
 import multiprocessing
+import multiprocessing as mp
 from multiprocessing import Manager
+from multiprocessing import Pool
 
 import time
 import random
+
 
 def SearchGrid(construct_trn_data, keep_old_trn_data,
                 data_type2, train_network, load_network, save_network,
                 network_predicts, network_controls, sampling_method, 
                 optimize, num_processes):
-    BSM_model = "THDM" 
+    #BSM_model = "THDM" 
 
     """
     Inputs
@@ -50,25 +55,25 @@ def SearchGrid(construct_trn_data, keep_old_trn_data,
    
     #------------CONSTRUCT COLLIDER TRAINING DATA FOR NETWORK----------------
     if construct_trn_data:
-        print("\n###################################################")
-        print("TRAINING DATA CONSTRUCTION")
+        print("\n-------------- TRAINING DATA CONSTRUCTION --------------")
 
         # Initialize data filesi (TDataFiles)
         if not keep_old_trn_data:
             DH.InitializeDataFiles(data_type1=1)
 
-        print("\nPerforming sampling and filtering")
+        print("\nPerforming sampling and filtering ...")
         training_samples = DC.Sampling(exp_num_training_points, sampling_method)
-        in_param_lists, free_param_lists, fixed_param_lists = EvalFcn(training_samples)
-        print("Done")
+        #in_param_lists, free_param_lists, fixed_param_lists = EvalFcn(training_samples)
+        param_lists = EvalFcn(training_samples)
+        print("Done.")
 
         print("\nAnalyzing parameter space using {} processes ... ".format(num_processes))
-        RunHEPs([in_param_lists, free_param_lists, fixed_param_lists], optimize, num_processes, data_type2, data_type1=1)
-        print("Done. Analyzed {} points".format(len(in_param_lists)))
+        RunHEPs(param_lists, optimize, num_processes, data_type2, data_type1=1)
+        print("Done. Analyzed {} points".format(param_lists.shape[1]))
 
         # Print summary of training data with plots
-        #DH.ReadFiles(data_type1=1, data_type2=data_type2)
-        PS.PlotGrid(data_type1=1, data_type2=data_type2, plot_seperate_constr=True, fig_name="TrainingDataPlot.png", print_summary=True)
+        DH.ReadFiles(data_type1=1, data_type2=data_type2)
+        PS.PlotGrid(data_type1=1, data_type2=data_type2, plot_seperate_constr=True, fig_name="TrainingDataPlot.png")
 
     #----------------------------TRAIN NETWORK-------------------------------
     if train_network or load_network:
@@ -85,7 +90,7 @@ def SearchGrid(construct_trn_data, keep_old_trn_data,
             print("\nPerforming sampling and filtering ...")
             pred_samples = DC.Sampling(exp_num_pred_points, sampling_method)
             in_param_lists, free_param_lists, fixed_param_lists = EvalFcn(pred_samples)
-            print("Done")
+            print("Done.")
 
             print("\nNeural network is making predictions ...")
             predictions =  np.array(NW.Predict(model, norm_var, free_param_lists))
@@ -102,9 +107,9 @@ def SearchGrid(construct_trn_data, keep_old_trn_data,
                 free_param_lists = free_param_lists[pos_prediction_indicies]
                 fixed_param_lists = fixed_param_lists[pos_prediction_indicies]
 
-                print("\nControlling positively predicted points")
+                print("\nAnalyzing positively predicted points")
                 RunHEPs([in_param_lists, free_param_lists, fixed_param_lists], optimize, num_processes, data_type2, data_type1=2)
-                print("Positively predicted points have been analyzed")
+                print("Done.")
 
                 # Summary
                 data = DH.ReadFiles(data_type1=2, data_type2=data_type2)
@@ -113,22 +118,19 @@ def SearchGrid(construct_trn_data, keep_old_trn_data,
                 print("Saving true positive points to FDataFiles")
                 DH.SaveControlledPosPoints(data, data_type2)
 
-                PS.PlotGrid(data_type1=3, data_type2=data_type2, plot_seperate_constr=False, fig_name="FinalDataPlot.png", print_summary=False)
+                PS.PlotGrid(data_type1=3, data_type2=data_type2, plot_seperate_constr=False, fig_name="FinalDataPlot.png")
         
     #-----------------CATCHING BAD INPUTS---------------------
     if network_predicts and not (train_network or load_network):
         sys.exit("Neural network cannot make any predictions unless an ANN model is traned or loaded. Set train_network or load_network to True")
     if network_controls and not network_predicts:
         sys.exit("Neural network cannot control positiviely predicted points unless the ANN model actually makes predictions first. Set network_predicts to True")
-    
+   
     print("\n")
     return
 
 
 def EvalFcn(samples):
-    #sample = [-0.1, 1, 1000, 800, 600]
-    #sample = [1, -.1, 1000, 800, 600]
-
     in_param_lists = []
     free_param_lists = []
     fixed_param_lists = []
@@ -170,21 +172,21 @@ def EvalFcn(samples):
 
 
         d = dict_free_param | dict_const_param | dict_dep_param
-        in_param_list = series_in_param.map(d).tolist()
-        free_param_list = series_free_param.map(d).tolist() # Note, this is the sample variable
-        fixed_param_list = series_fixed_param.map(d).tolist()
+        in_param_list = series_in_param.map(d).to_numpy()
+        free_param_list = series_free_param.map(d).to_numpy() # Note, this is the sample variable
+        fixed_param_list = series_fixed_param.map(d).to_numpy()
 
         in_param_lists.append(in_param_list)
         free_param_lists.append(free_param_list)
         fixed_param_lists.append(fixed_param_list)
-    
-    return np.array(in_param_lists), np.array(free_param_lists), np.array(fixed_param_lists)
+   
+    return np.array([in_param_lists, free_param_lists, fixed_param_lists], dtype=object)
 
 
 def RunHEPs(param_lists, optimize, num_processes, data_type2, data_type1=1):
 
     #-------- INITIALIZING SIMULATION DIRECTORIES ------------------------------
-    # Create a simulation directory for each (concurrent) process
+    # Create a work directory for each child (concurrent) process
     subprocess.run(["mkdir", "-p", "SimulationDir"])
     for i in range(num_processes):
         try:
@@ -194,129 +196,96 @@ def RunHEPs(param_lists, optimize, num_processes, data_type2, data_type1=1):
             print(e)
             sys.exit("Directory initialization failed")
 
-    # Filter samples
-    in_param_lists, free_param_lists, fixed_param_lists = param_lists
-
     #-------- MULTIPROCESSING VARIABLE DEFINITIONS -------------------------------
-    # Parent variable. Keeps track of number of points scanned
-    counter = 0
-
-    # Parent variable + lock. Contains available directories for children to run in.
-    manager = Manager()
-    available_dir = [i+1 for i in range(num_processes)]
-    available_dir = manager.list(available_dir)
+    manager = mp.Manager()
+    # List specifying if children processes have entered their respective work directories
+    changed_directory = [False] * num_processes
+    changed_directory = manager.list(changed_directory)
+    # Lock for changed_directory
     dir_lock = manager.Lock()
-   
-    # Parent variable. List of (children) processes. Tells parent when all children have terminated.
-    processes_list = []
-
     # Data writing lock. Only one process may save data at a time.
     writing_lock = manager.Lock()
 
-    # Shared variable + lock. Variable updated for each completed iteration.
-    # Used to update (shared) tqdm bar.
-    progress = multiprocessing.Value('i', -1)
-    tqdm_lock = multiprocessing.Lock()
-    num_samples = len(in_param_lists)
-    pbar = tqdm(total=num_samples, leave=False)
-
-
     #--------- RUNNING ANALYSIS ---------------------------------------------------
-    while counter < num_samples:
-        # Check if constraints on free Lagrangian parameters (defined in EvalFcn) satisfied.
-        # Update tqdm bar and go to next iteration if not.
-        #in_param_list, free_param_list, fixed_param_list = EvalFcn(sample[counter])
+    # Preparing args for Pool
+    num_samples = param_lists.shape[1]
+    data_types = [data_type1, data_type2]
+    locks = [dir_lock, writing_lock]
 
-        in_param_list, free_param_list, fixed_param_list = in_param_lists[counter], free_param_lists[counter], fixed_param_lists[counter]
-        #if in_param_list==None:
-        #    counter+=1
-        #    with tqdm_lock:
-        #        progress.value+=1
-        #        pbar.n = progress.value
-        #        pbar.last_print_n = progress.value
-        #        pbar.update()
-        #    continue
+    # Find an appropriate chunk size. Too large => tqdm bar gets updated too selldomly,
+    # too smal => large overhead. 
+    ratio = 10
+    # Chunksize = num_samples/(num_processes * ratio)
+    cs = ComputeChunkSize(num_samples, num_processes, ratio)
+    print("Chunk size: ", cs, ". Note, the progress bar gets updated each time a chunk completes, so be patient or decrease the chunk size")
+    with mp.Pool(num_processes) as p:
+        list(tqdm(p.imap(ChildProcess, [([*data_types, *param_lists[:,i], *locks, optimize, changed_directory]) for i in range(num_samples)], chunksize=cs), total=num_samples))
+    
+    return
 
-        # Check if any available directories. If not, re-try.
-        if not available_dir:
-            #print("patiently waiting...")
-            time.sleep(0.5)
-            continue
+def ChildProcess(args):
+    # Unpacking inputs
+    data_type1, data_type2, in_param_list, free_param_list, fixed_param_list, dir_lock, writing_lock, optimize, changed_directory = args
 
-        # Acquire directory lock and extract index of available directory.
-        with dir_lock:
-            work_dir = available_dir.pop(0)
-
-        # Define the tasks of the child processes as a inner function: run analysis and store data.
-        def ChildProcess():
-            # Go to the appropriate directory. This is now the working directory of this child process.
-            os.chdir("SimulationDir/SimDir{}".format(work_dir))
-
-            # Run collider and/or cosmic analysis.
-            passed_collider_constr=True
-            if data_type2=='both' or data_type2=='collider':    
-                subprocess.run(["rm", "-f", "SPheno.spc.{}".format(BSM_model)]) 
-                passed_collider_constr, collider_output = DC.AnalysisCollider(in_param_list, optimize=optimize)
-            if data_type2=='both' or data_type2=='cosmic':
-                if passed_collider_constr:
-                    cosmic_output = DC.AnalysisCosmic(in_param_list)
-                else:
-                    cosmic_output = [3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0] 
-            
-            # Acquire writing lock and write data into files.
-            with writing_lock:
-                DH.WriteFreeParam(free_param_list, data_type1)
-                DH.WriteFixedParam(fixed_param_list, data_type1)
-                if data_type2=='collider' or data_type2=='both':
-                    DH.WriteLabelsCol(*collider_output, data_type1)
-                if data_type2=='cosmic' or data_type2=='both':
-                    try:
-                        DH.WriteLabelsGW(*cosmic_output, data_type1)
-                    except:
-                        transition_order = 99
-                        DH.WriteEmptyLabelsGW(transition_order, data_type1)
-            
-            # Release directory for other processes
+    # Go to the appropriate directory. This is now the working directory of this child process. 
+    work_dir_index = IdentifyProcessID(multiprocessing.current_process().name) 
+    if not changed_directory[work_dir_index-1]:
+        try:
+            os.chdir("SimulationDir/SimDir{}".format(work_dir_index))
             with dir_lock:
-                available_dir.append(work_dir)
-            
-            # Update tqdm bar
-            with tqdm_lock:
-                progress.value+=1
-                pbar.n = progress.value
-                pbar.last_print_n = progress.value
-                pbar.update()
-            
-            # Child process terminating
-            os._exit(0)
-            return
-        
-        # Run childred processes as defined in the function above.
-        p = multiprocessing.Process(target=ChildProcess)
-        p.start()
-        # Append process to processes_list and update counter.
-        processes_list.append(p)
-        counter+=1
-       
-    # Parent process waits for all children to terminate.          
-    for p in processes_list:
-        p.join()
-    pbar.close()
+                changed_directory[work_dir_index-1] = True
+        except Exception as e:
+            print(e)
+            sys.exit("Child process {} was unable to enter its work directory".format(work_dir_index))
 
+    # Run collider and/or cosmic analysis.
+    passed_collider_constr=True
+    if data_type2=='both' or data_type2=='collider':
+        subprocess.run(["rm", "-f", "SPheno.spc.{}".format(BSM_model)])
+        passed_collider_constr, collider_output = DC.AnalysisCollider(in_param_list, optimize=optimize)
+    if data_type2=='both' or data_type2=='cosmic':
+        if passed_collider_constr:
+            cosmic_output = DC.AnalysisCosmic(in_param_list)
+        else:
+            cosmic_output = [3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+
+    # Acquire writing lock and write data into files.
+    with writing_lock:
+        DH.WriteFreeParam(free_param_list, data_type1)
+        DH.WriteFixedParam(fixed_param_list, data_type1)
+        if data_type2=='collider' or data_type2=='both':
+            DH.WriteLabelsCol(*collider_output, data_type1)
+        if data_type2=='cosmic' or data_type2=='both':
+            try:
+                DH.WriteLabelsGW(*cosmic_output, data_type1)
+            except:
+                transition_order = 99
+                DH.WriteEmptyLabelsGW(transition_order, data_type1)
     return
 
 
+def IdentifyProcessID(process_name):
+    index = process_name.index("-")
+    ID = int(process_name[index+1:]) - 1
+    return ID
+
+
+def ComputeChunkSize(num_samples, num_processes, ratio):
+    chunksize, extra = divmod(num_samples, num_processes * ratio)
+    if chunksize < 1:
+        chunksize = 1
+    return chunksize
 
 
 SearchGrid(
         construct_trn_data=True,
         keep_old_trn_data=True,    # Only set to True if data files already contain data
         data_type2='collider', # 'collider','cosmic','both'
-        train_network=True,
+        train_network=False,
         load_network=False,
         save_network=False,  # only saved network loads for predictions, fix!
-        network_predicts=True,
-        network_controls=True,
+        network_predicts=False,
+        network_controls=False,
         sampling_method=1,   # 1=sobol sequence, 2=InDataFile
         optimize=True,
         num_processes = 5

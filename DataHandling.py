@@ -5,7 +5,9 @@ import sys
 import subprocess
 
 from UserInput import *
+from DerivedInput import *
 
+prefixes = ["T","P","F"]
 
 
 ####################### INITIALIZING DATA FILES ########################
@@ -223,8 +225,8 @@ def CreateLabels(l_col, l_gw, data_type2, print_summary):
         labels_HBS = np.array([1 if (item[0]==1 and item[1] < pvalue_threshold) else 0 for item in HBS])
         #labels_HBS = np.ones(labels_HBS.shape[0])
         labels_ST = np.array([1 if STellipse(item[1],item[0]) <= 1 else 0 for item in ST])
-        #labels_Unitarity = np.array([int(item) for item in Unitarity])
-        labels_Unitarity = np.ones(labels_HBS.shape[0])
+        labels_Unitarity = np.array([int(item) for item in Unitarity])
+        #labels_Unitarity = np.ones(labels_HBS.shape[0])
         labels_col = np.multiply(np.multiply(labels_HBS, labels_ST), labels_Unitarity)
 
         if print_summary:

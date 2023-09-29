@@ -2,10 +2,11 @@
 from UserInput import *
 from DerivedInput import *
 import DataHandling as DH
-#sys.path.insert(0, CT_path)
+import sys
+sys.path.insert(0, CT_path)
 #from LS_TColor_DRPython import LS_TColor, nVevs
-#from THDM_DRPython  import THDM, nVevs
-#from gwFuns import *
+from THDM_DRPython  import THDM, nVevs
+from gwFuns import *
 
 # Import libraries
 import numpy as np
@@ -14,12 +15,12 @@ from scipy.stats import qmc
 import pandas as pd
 
 import subprocess
-import sys
 import io
 from contextlib import redirect_stdout
 import contextlib
 import os
 
+import random
 
 def AnalysisCollider(in_param_list, optimize):  # data_type1 not needed
 
@@ -72,8 +73,10 @@ def AnalysisCollider(in_param_list, optimize):  # data_type1 not needed
 
 
 def AnalysisCosmic(in_param_list):
-    print("RUNNING COSMIC ANALYSIS --------------------------------------------------------------------------------------------")
-    print(in_param_list)
+    #print("RUNNING COSMIC ANALYSIS --------------------------------------------------------------------------------------------")
+    #print(in_param_list)
+    rand_num = random.randint(1,10000)
+    print("Running cosmic analysis {}".format(rand_num))
 
     alphaa,betaa,fpeak,ompeak,STTn,STTp,dSTdTTn,dSTdTTp,Tc,Tn,Tp,low_vev,high_vev,dV,dVdT,action = 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
     try:
@@ -145,6 +148,7 @@ def AnalysisCosmic(in_param_list):
     #    DH.WriteEmptyLabelsGW(transition_order, data_type1)
     cosmic_output = [transition_order, alphaa, betaa, fpeak, ompeak, STTn, STTp, dSTdTTn, dSTdTTp, Tc, Tn, Tp, low_vev, high_vev, dV, dVdT, action]
 
+    print("Cosmic analysis {} done".format(rand_num))
     return cosmic_output
 
 
@@ -174,17 +178,17 @@ def Sampling(exp_num_points, sampling_method):
         print("Raise error")
     return input_samples
 
-def Sampling2():    # NOT USED
-    with open("InDataFile_Param", "r") as f:
-        l1 = f.readlines()
-    with open("InDataFile_Masses", "r") as f:
-        l2 = f.readlines()
-    InParam = np.array([l1[i].split() for i in range(2,len(l1))], dtype=object)
-    InParam = InParam.astype(np.float64)
-    Masses = np.array([l2[i].split() for i in range(2,len(l2))], dtype=object)
-    Masses = Masses.astype(np.float64)
-    num_training_points = len(l1)
-    return InParam, Masses, num_traning_points
+#def Sampling2():    # NOT USED
+#    with open("InDataFile_Param", "r") as f:
+#        l1 = f.readlines()
+#    with open("InDataFile_Masses", "r") as f:
+#        l2 = f.readlines()
+#    InParam = np.array([l1[i].split() for i in range(2,len(l1))], dtype=object)
+#    InParam = InParam.astype(np.float64)
+#    Masses = np.array([l2[i].split() for i in range(2,len(l2))], dtype=object)
+#    Masses = Masses.astype(np.float64)
+#    num_training_points = len(l1)
+#    return InParam, Masses, num_traning_points
 
 
 def RunSPheno():
@@ -255,5 +259,13 @@ def RunCosmoTransitions(params):
     m.pruneTransitions()
     m.augmentTransitionDictionary()
     return m
+
+
+def TimeoutHandler(a,b):
+    print("Signal recieved")
+    raise Exception("FUBAR")
+
+
+
 
 

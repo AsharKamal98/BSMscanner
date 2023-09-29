@@ -245,7 +245,19 @@ def ChildProcess(args):
         passed_collider_constr, collider_output = DC.AnalysisCollider(in_param_list, optimize=optimize)
     if data_type2=='both' or data_type2=='cosmic':
         if passed_collider_constr:
-            cosmic_output = DC.AnalysisCosmic(in_param_list)
+            signal.signal(signal.SIGALRM, DC.TimeoutHandler)
+            signal.alarm(5*3600)
+            try:
+                cosmic_output = DC.AnalysisCosmic(in_param_list)
+            except Exception as e:
+                if "FUBAR" in str(e):
+                    print("Cosmic analysis did not finish within 5 hours, aborting")
+                else:
+                    print("Cosmic analysis ran into some exception")
+                    print(e)
+                    cosmic_output = [4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+            finally:
+                signal.alarm(0)
         else:
             cosmic_output = [3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
 
@@ -274,13 +286,14 @@ def ComputeChunkSize(num_samples, num_processes, ratio):
     chunksize, extra = divmod(num_samples, num_processes * ratio)
     if chunksize < 1:
         chunksize = 1
-    return chunksize
+    #return chunksize
+    return 1
 
 
 SearchGrid(
         construct_trn_data=True,
-        keep_old_trn_data=True,    # Only set to True if data files already contain data
-        data_type2='collider', # 'collider','cosmic','both'
+        keep_old_trn_data=False,    # Only set to True if data files already contain data
+        data_type2='cosmic', # 'collider','cosmic','both'
         train_network=False,
         load_network=False,
         save_network=False,  # only saved network loads for predictions, fix!

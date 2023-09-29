@@ -208,11 +208,7 @@ def ReadSPheno():
     return spheno_output1, spheno_output2, spheno_output3
 
 def RunHiggsBounds():
-    subprocess.run(["bash", "../../ShellScripts/RunHiggsBounds.sh", HB_path_S])
-    return None
-
-def RunHiggsSignals():
-    subprocess.run(["bash", "../../ShellScripts/RunHiggsSignals.sh", HS_path_S])
+    subprocess.run(["bash", "../../ShellScripts/RunHiggsBounds.sh", HB_path_S, num_h, num_hp])
     return None
 
 def ReadHiggsBounds():
@@ -222,6 +218,10 @@ def ReadHiggsBounds():
     index2 = l[index1].split().index("HBresult")
     higgsbounds_output = l[index1+2].split()[index2-1]
     return higgsbounds_output
+
+def RunHiggsSignals():
+    subprocess.run(["bash", "../../ShellScripts/RunHiggsSignals.sh", HS_path_S, num_h, num_hp])
+    return None
 
 def ReadHiggsSignals():
     with open(HS_output_filename) as f:

@@ -1,9 +1,9 @@
 
 ############################################################### BSM DETAILS ########################################################
 #===================================================================================================================================
-num_h = 2 # Fix
-num_hp = 3 # Fix
-exp_num_training_points = 8 #15 
+num_h = "3"     # Use citation marks 
+num_hp = "1"    # Use citation marks
+exp_num_training_points = 6 #15 
 num_training_points = 2**(exp_num_training_points)
 exp_num_pred_points = 10
 num_pred_points = 2**(exp_num_pred_points)

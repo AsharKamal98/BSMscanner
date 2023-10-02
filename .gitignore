@@ -1,7 +1,12 @@
+SARAH-4.15.0
 SPheno-4.0.5
 higgsbounds-5.10.2
 higgssignals-2.6.2
 DRalgo-1.0.2-beta
+SimulationDir
+Figures
+TrainedANN
+BackupHub.py
 
 __pycache__
 

@@ -246,7 +246,8 @@ def CreateLabels(l_col, l_gw, data_type2, print_summary):
         high_vev = high_vev.astype(np.float64)
         Tn = np.array([l_gw[i].split()[10] for i in range(2,len(l_gw))])
         Tn = Tn.astype(np.float64)
-        strongPT_criteria = (high_vev-low_vev)/Tn
+        with np.errstate(divide="ignore", invalid="ignore"): # Ignore divid by zero warnings
+            strongPT_criteria = (high_vev-low_vev)/Tn
 
         labels_PTO = [1 if item == 1 else 0 for item in PTO]
         labels_omega = [1 if item>10**(omega_exp) else 0 for item in omega]
@@ -259,7 +260,11 @@ def CreateLabels(l_col, l_gw, data_type2, print_summary):
             print("Number of points giving strong first-order phase transitions", np.sum(labels_strongPT))
             print("Number of points satisfying cosmic constraints", np.sum(labels_GW))
 
-
+    
+        #print(low_vev)
+        #print(high_vev)
+        #print(Tn)
+        #print(strongPT_criteria)
     # Temporary
     # This points where CosmoTransitions or GwFunc codes crashed
     #bad_indicies = np.where((np.array(labels_PTO) == -1) | (np.array(labels_PTO) == 99))[0]
@@ -324,7 +329,7 @@ def CreateSeperateLabels(l_col, l_gw, data_type2, X, print_summary=True):
             if labels_PTO[i]==1:
                 labels.append(4)
                 X_new.append(X[i])
-            if labels_strong[i]==1:
+            if labels_strongPT[i]==1:
                 labels.append(5)
                 X_new.append(X[i])
             if labels_omega[i]==1:

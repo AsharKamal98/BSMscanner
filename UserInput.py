@@ -3,7 +3,7 @@
 #===================================================================================================================================
 num_h = "3"     # Use citation marks 
 num_hp = "1"    # Use citation marks
-exp_num_training_points = 6 #15 
+exp_num_training_points = 5 #15 
 num_training_points = 2**(exp_num_training_points)
 exp_num_pred_points = 10
 num_pred_points = 2**(exp_num_pred_points)
@@ -59,7 +59,7 @@ CT_path = "DRalgo-1.0.2-beta/examples"
 #CT_infile_name = "LS_TColor_DRPython" #Remove .py
 #CT_class_name = "LS_TColor"     # Not being used
 CT_infile_name = "THDM_DRPython" #Remove .py
-CT_class_name = "THDM"
+CT_class_name = "THDM"  #NOT USED
 
 
 

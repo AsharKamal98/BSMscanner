@@ -71,7 +71,7 @@ def SearchGrid(construct_trn_data, keep_old_trn_data,
         RunHEPs(param_lists, optimize, num_processes, data_type2, data_type1=1)
         print("Done. Analyzed {} points".format(param_lists.shape[1]))
 
-        # Print summary of training data with plots
+        # Print summary of training data and construct plots
         DH.ReadFiles(data_type1=1, data_type2=data_type2)
         PS.PlotGrid(data_type1=1, data_type2=data_type2, plot_seperate_constr=True, fig_name="TrainingDataPlot.png")
 
@@ -291,8 +291,8 @@ def ComputeChunkSize(num_samples, num_processes, ratio):
 
 
 SearchGrid(
-        construct_trn_data=True,
-        keep_old_trn_data=False,    # Only set to True if data files already contain data
+        construct_trn_data=False,
+        keep_old_trn_data=True,    # Only set to True if data files already contain data
         data_type2='cosmic', # 'collider','cosmic','both'
         train_network=False,
         load_network=False,

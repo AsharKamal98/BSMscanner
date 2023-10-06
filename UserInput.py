@@ -3,7 +3,7 @@
 #===================================================================================================================================
 num_h = "3"     # Use citation marks 
 num_hp = "1"    # Use citation marks
-exp_num_training_points = 5 #15 
+exp_num_training_points = 19 #15 #20=19h #16=2h
 num_training_points = 2**(exp_num_training_points)
 exp_num_pred_points = 10
 num_pred_points = 2**(exp_num_pred_points)
@@ -28,9 +28,9 @@ d = { \
 
     "LesHouches number": [1, 2, 3, 4, 5, 6, 7, 8, 9, None, None, None, None, None, None], \
 
-    "Range start" : [None, None, None, -5, -5, None, None, None, 0.01,  100,  100,  125.25, 100, None, None], \
+    "Range start" : [None, None, None, 0, 0, None, None, None, 0.001,  50,  50,  125.25, 50, None, None], \
 
-    "Range end" :   [None, None, None,  5,  5, None, None, None, 60, 2000, 2000, 125.25, 2000, None, None], \
+    "Range end" :   [None, None, None,  5,  3.5, None, None, None, 30, 500, 500, 125.25, 500, None, None], \
 
     "Dependence" : ["(-2*lam1*v1**3 - 2*M12*v2 - (lam3+lam4+2*lam5)*v1*v2**2)/(2*v1)",
                     "(-2*M12*v1 - 2*lam2*v2**3 - (lam3+lam4+2*lam5)*v1**2*v2)/(2*v2)", \

@@ -57,7 +57,7 @@ def AnalysisCollider(in_param_list, optimize):  # data_type1 not needed
         higgssignals_output = [0,0,0]
         successful_run = 0
         
-        sys.exit("Exiting")
+        sys.exit("Exiting") # Fix, does not work properly with multiprocessing!
 
     # Write label into data file
     #DH.WriteLabelsCol(successful_run, spheno_output2, spheno_output3, higgsbounds_output, higgssignals_output, data_type1)
@@ -200,6 +200,7 @@ def ReadSPheno():
     with open(SPheno_spc_filename, "r") as f:
         l = f.readlines()
 
+    # spheno_output1 not used + only locates 4 masses! Remove.
     index1 = [idx for idx, s in enumerate(l) if 'Block MASS' in s][0]
     spheno_output1 = [l[index1+2+i].split()[1] for i in range(4)] # May use list comprehenseion over for loop!
 
@@ -236,7 +237,7 @@ def ReadHiggsSignals():
     higgssignals_output.append(l[index1+2].split()[11])
     return higgssignals_output
 
-def RunCosmoTransitions(params):
+def RunCosmoTransitions(in_param_list):
     yt = 1.07
     gwsq = pow(0.65100, 2)
     gYsq = pow(0.357254, 2)
@@ -246,7 +247,10 @@ def RunCosmoTransitions(params):
     #mH = -params[8] * v**2 #Fix!
     #params_4D_ref = np.array([gwsq, gYsq, gssq, params[9],params[10],params[4],params[5], params[6], params[7], params[8], params[0], params[1], params[2], params[3], yt, mH, params[12], params[11]])
     ##### THDM Specific #####
-    params_4D_ref = np.array([gwsq, gYsq, gssq, params[3],params[4], params[5], params[6], params[7], yt, params[0], params[1], params[2]])
+    print("NEW")
+    params_4D_ref = np.array([gwsq, gYsq, gssq, in_param_list[3], in_param_list[4], in_param_list[5], in_param_list[6], in_param_list[7], yt, in_param_list[0], in_param_list[1], in_param_list[2]])
+    print(params_4D_ref)
+
     #lam1, lam2, lam3, lam4, lam5, yt, M11, M12, M22]
 
 

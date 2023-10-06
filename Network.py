@@ -27,7 +27,8 @@ from imblearn.under_sampling import RandomUnderSampler
 
 
 
-def Boosting(X, y, under_sample, over_sample):
+def Boosting(data, under_sample, over_sample):
+    X, y = data[:,:-1], data[:,-1]
     counter = Counter(y)
     print("Classes distribution before boosting", counter)
 
@@ -46,7 +47,8 @@ def Boosting(X, y, under_sample, over_sample):
         counter = Counter(y)
         print("Class distribution after over sampling", counter)
 
-    return X,y
+    data_boosted = np.c_[X,y]
+    return data_boosted
 
 
 def ConstructModel():
@@ -227,7 +229,8 @@ def TrainANN(data_type2, under_sample, over_sample, load_network, train_network,
 
         # Defining training and validation sets
         X_trn, X_val, y_trn, y_val = train_test_split(X_norm,y)
-        X_boosted_trn, y_boosted_trn = Boosting(X_trn, y_trn, under_sample, over_sample)
+        data_boosted_trn = Boosting(np.c_[X_trn, y_trn], under_sample, over_sample)
+        X_boosted_trn, y_boosted_trn = data[:,:-1], data[:,-1]
 
     #print("\nSize of batch is", len(X_boosted_trn))
     if train_network:

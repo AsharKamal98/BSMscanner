@@ -299,20 +299,26 @@ def CreateSeperateLabels(l_col, l_gw, data_type2, X, print_summary=True):
     """ Rewrites the different label lists from CreateLabels to one single label list.
     Each element is a string describing which constraint the corresponding points satisfies.
     Same point may appear several times if multiple constraints are satisfied simultaneously
-    by a point. Used for plotting purposes. """
+    by a point. Used for visualizing training data. """
 
     if data_type2=='collider':
         labels_Unitarity, labels_ST, labels_HBS = CreateLabels(l_col, l_gw, data_type2, print_summary)
+        num_samples = len(labels_Unitarity)
     elif data_type2=='cosmic':
         labels_PTO, labels_omega, labels_strongPT = CreateLabels(l_col, l_gw, data_type2, print_summary)
+        num_samples = len(labels_PTO)
     elif data_type2=='both':
         labels_Unitarity, labels_ST, labels_HBS, labels_PTO, labels_omega, labels_strongPT = CreateLabels(l_col, l_gw, data_type2, print_summary)
-
+        num_samples = len(labels_Unitarity)
 
     X_new=[]
     labels=[]
-    if data_type2=='collider' or data_type2=='both': 
-        for i in range(len(labels_Unitarity)):
+
+    for i in range(num_samples):
+        labels.append(0)
+        X_new.append(X[i])
+
+        if data_type2=='collider' or data_type2=='both': 
             if labels_Unitarity[i]==1:
                 labels.append(1)
                 X_new.append(X[i])
@@ -322,10 +328,8 @@ def CreateSeperateLabels(l_col, l_gw, data_type2, X, print_summary=True):
             if labels_ST[i]==1:
                 labels.append(3)
                 X_new.append(X[i])
-            #labels.append(0)
-            #X_new.append(X[i])
-    if data_type2=='cosmic' or data_type2=='both':
-        for i in range(len(labels_PTO)):
+
+        if data_type2=='cosmic' or data_type2=='both':
             if labels_PTO[i]==1:
                 labels.append(4)
                 X_new.append(X[i])
@@ -335,8 +339,6 @@ def CreateSeperateLabels(l_col, l_gw, data_type2, X, print_summary=True):
             if labels_omega[i]==1:
                 labels.append(6)
                 X_new.append(X[i])
-            #labels.append("BG")
-            #X_new.append(X[i])
 
     return np.array(X_new), np.array(labels)
 

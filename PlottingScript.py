@@ -2,6 +2,7 @@
 from UserInput import *
 from DerivedInput import *
 import DataHandling as DH
+import Network as NW
 
 # Import libraries
 import numpy as np
@@ -60,26 +61,38 @@ def PlotGrid(data_type1, data_type2, plot_seperate_constr, fig_name):
     """
     Add info
     """
+    
+    print("Creating Plot: {}".format(fig_name), "See Figures directory")
 
     data = DH.ReadFiles(data_type1, data_type2, plot_seperate_constr, print_summary=False)
     
     if plot_seperate_constr:
-        dct = {1.0 : "U", 2.0 : "HBS", 3.0 : "STU"}
-        palette={1.0 : "green", 2.0 : "blue", 3.0 : "red"}
-    else:
-        dct = {0.0 : "Neg", 1.0 : "Pos"}
-        palette={0.0 : "red", 1.0 : "blue"}
+        dct = {0.0 : "BG", 1.0 : "U", 2.0 : "H", 3.0 : "STU", 4.0 : "FOPT", 5.0 : "S-FOPT", 6.0 : "D-FOPT"}
+        if data_type2 == "collider":
+            # 0.0="BG", 1.0="U", 2.0="H", 3.0="STU"
+            palette = {"BG" : "black", "U" : "green", "H" : "blue", "STU" : "red"}
+            data  = NW.Boosting(data, under_sample={0.0 : 350, 1.0 : 350, 2.0 : 350, 3.0 : 350}, over_sample=None)
+        elif data_type2 == "cosmic":
+            # 0.0="BG", 1.0="FOPT", 2.0="S-FOPT", 3.0="D-FOPT"
+            palette = {"BG" : "black", "FOPT" : "orange", "S-FOPT" : "dodgerblue", "D-FOPT" : "darkgreen"}
+            data  = NW.Boosting(data, under_sample={0.0 : 10, 4.0 : 10, 5.0 : 10, 6.0 : 10}, over_sample=None)
+        elif data_type2 == "both":
+            palette = {"BG" : "black", "U" : "green", "H" : "blue", "STU" : "red", "BG" : "black", "FOPT" : "orange", "S-FOPT" : "dodgerblue", "D-FOPT" : "darkgreen"}
+            data  = NW.Boosting(data, under_sample={0.0 : 10, 1.0 : 10, 2.0 : 10, 3.0 : 10, 4.0 : 10, 5.0 : 10, 6.0 : 10}, over_sample=None)
 
-    #new_labels = DH.ConvertLabels(dct, data[:,-1]) 
-    #new_data = np.concatenate((data[:,:-1], new_labels.reshape(-1,1)), axis=1)[:10]
+    else:
+        
+        dct = {0.0 : "Neg", 1.0 : "Pos"}
+        palette={"Neg" : "red", "Pos" : "blue"}
+        data  = NW.Boosting(data, under_sample={0.0 : 1000, 1.0 : 170}, over_sample=None)
 
     df_plot = pd.DataFrame(data, columns = series_free_param.tolist() + ["Constraints"])
+    df_plot["Constraints"] = df_plot["Constraints"].map(dct)
 
     sns.set_style("whitegrid");
     sns.pairplot(df_plot, hue="Constraints", palette=palette, plot_kws={"s": 2})
 
     subprocess.run(["mkdir", "-p", "Figures"])
-    print("Creating Plot: {}".format(fig_name), "See Figures directory")
     plt.savefig('Figures/{}'.format(fig_name))
 
 

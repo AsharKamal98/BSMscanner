@@ -14,6 +14,7 @@ from tqdm import tqdm
 import subprocess
 import sys
 import os
+import signal
 import multiprocessing
 import multiprocessing as mp
 from multiprocessing import Manager
@@ -66,6 +67,9 @@ def SearchGrid(construct_trn_data, keep_old_trn_data,
         #in_param_lists, free_param_lists, fixed_param_lists = EvalFcn(training_samples)
         param_lists = EvalFcn(training_samples)
         print("Done.")
+        
+        #print(param_lists.shape[1])
+        #sys.exit("Manual exit")
 
         print("\nAnalyzing parameter space using {} processes ... ".format(num_processes))
         RunHEPs(param_lists, optimize, num_processes, data_type2, data_type1=1)
@@ -73,7 +77,7 @@ def SearchGrid(construct_trn_data, keep_old_trn_data,
 
         # Print summary of training data and construct plots
         DH.ReadFiles(data_type1=1, data_type2=data_type2)
-        PS.PlotGrid(data_type1=1, data_type2=data_type2, plot_seperate_constr=True, fig_name="TrainingDataPlot.png")
+        PS.PlotGrid(data_type1=1, data_type2=data_type2, plot_seperate_constr=False, fig_name="TrainingDataPlot.png")
 
     #----------------------------TRAIN NETWORK-------------------------------
     if train_network or load_network:
@@ -147,6 +151,7 @@ def EvalFcn(samples):
 
         ########### THDM Specific ##########
             if i==1:
+                # no complex couplings
                 lam3 = dict_dep_param["lam3"]
                 if abs(round(lam3.imag,5)) == 0:
                     dict_dep_param["lam3"] = lam3.real
@@ -155,6 +160,18 @@ def EvalFcn(samples):
                 else:
                     should_break = True
                     break
+
+                # Boundedness from below
+                lam1 = dict_free_param["lam1"]
+                lam2 = dict_free_param["lam2"]
+                lam3 = dict_dep_param["lam3"]
+                lam4 = dict_dep_param["lam4"]
+                lam5 = dict_dep_param["lam5"]
+                prod = -cmath.sqrt(lam1*lam2)
+                if lam1 < 0 or lam2 < 0 or lam3 < prod or lam3+lam4-lam5 < prod:
+                    should_break = True
+                    break
+
             if should_break:
                 break
         if should_break:
@@ -214,7 +231,7 @@ def RunHEPs(param_lists, optimize, num_processes, data_type2, data_type1=1):
 
     # Find an appropriate chunk size. Too large => tqdm bar gets updated too selldomly,
     # too smal => large overhead. 
-    ratio = 10
+    ratio = 20
     # Chunksize = num_samples/(num_processes * ratio)
     cs = ComputeChunkSize(num_samples, num_processes, ratio)
     print("Chunk size: ", cs, ". Note, the progress bar gets updated each time a chunk completes, so be patient or decrease the chunk size")
@@ -289,11 +306,10 @@ def ComputeChunkSize(num_samples, num_processes, ratio):
     #return chunksize
     return 1
 
-
 SearchGrid(
-        construct_trn_data=False,
-        keep_old_trn_data=True,    # Only set to True if data files already contain data
-        data_type2='cosmic', # 'collider','cosmic','both'
+        construct_trn_data=True,
+        keep_old_trn_data=False,    # Only set to True if data files already contain data
+        data_type2='both', # 'collider','cosmic','both'
         train_network=False,
         load_network=False,
         save_network=False,  # only saved network loads for predictions, fix!
@@ -301,7 +317,7 @@ SearchGrid(
         network_controls=False,
         sampling_method=1,   # 1=sobol sequence, 2=InDataFile
         optimize=True,
-        num_processes = 5
+        num_processes = 25
         )
 
 

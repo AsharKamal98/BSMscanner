@@ -171,6 +171,14 @@ def EvalFcn(samples):
                 if lam1 < 0 or lam2 < 0 or lam3 < prod or lam3+lam4-lam5 < prod:
                     should_break = True
                     break
+                lambdas = [lam1,lam2,lam3,lam4,lam5]
+                if any(abs(lam) > 4*np.pi for lam in lambdas):
+                    should_break = True
+                    break
+
+
+
+
 
             if should_break:
                 break

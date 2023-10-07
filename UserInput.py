@@ -7,6 +7,7 @@ exp_num_training_points = 19 #15 #20=19h #16=2h
 num_training_points = 2**(exp_num_training_points)
 exp_num_pred_points = 10
 num_pred_points = 2**(exp_num_pred_points)
+CT_wait_time = 2.5
 
 
 #BSM_model = "TSM"

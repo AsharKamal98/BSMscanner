@@ -177,9 +177,6 @@ def EvalFcn(samples):
                     break
 
 
-
-
-
             if should_break:
                 break
         if should_break:
@@ -271,7 +268,7 @@ def ChildProcess(args):
     if data_type2=='both' or data_type2=='cosmic':
         if passed_collider_constr:
             signal.signal(signal.SIGALRM, DC.TimeoutHandler)
-            signal.alarm(5*3600)
+            signal.alarm(int(CT_wait_time*3600))
             try:
                 cosmic_output = DC.AnalysisCosmic(in_param_list)
             except Exception as e:

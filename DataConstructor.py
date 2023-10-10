@@ -3,9 +3,18 @@ from UserInput import *
 from DerivedInput import *
 import DataHandling as DH
 import sys
+
+import importlib
 sys.path.insert(0, CT_path)
+imported_module = importlib.import_module(CT_infile_name)
+CT_class = getattr(imported_module, CT_class_name, None)
+nVevs = getattr(imported_module, "nVevs", None)
+#from imported_module import nVevs
+
 #from LS_TColor_DRPython import LS_TColor, nVevs
-from THDM_DRPython  import THDM, nVevs
+#from LS_TColor_DRPython import CT_class_name , nVevs
+#CT_infile_name
+#from THDM_DRPython  import THDM, nVevs
 from gwFuns import *
 
 # Import libraries
@@ -244,14 +253,12 @@ def RunCosmoTransitions(in_param_list):
     gssq = pow(1.2104, 2)
 
     ###### TC Specific ######
-    #mH = -params[8] * v**2 #Fix!
-    #params_4D_ref = np.array([gwsq, gYsq, gssq, params[9],params[10],params[4],params[5], params[6], params[7], params[8], params[0], params[1], params[2], params[3], yt, mH, params[12], params[11]])
+    v = 246.220569 
+    mH = -in_param_list[8] * v**2 #Fix!
+    params_4D_ref = np.array([gwsq, gYsq, gssq, in_param_list[9], in_param_list[10], in_param_list[4], in_param_list[5], in_param_list[6], in_param_list[7], in_param_list[8], in_param_list[0], in_param_list[1], in_param_list[2], in_param_list[3], yt, mH, in_param_list[12], in_param_list[11]])
     ##### THDM Specific #####
-    print("NEW")
-    params_4D_ref = np.array([gwsq, gYsq, gssq, in_param_list[3], in_param_list[4], in_param_list[5], in_param_list[6], in_param_list[7], yt, in_param_list[0], in_param_list[1], in_param_list[2]])
-    print(params_4D_ref)
+    #params_4D_ref = np.array([gwsq, gYsq, gssq, in_param_list[3], in_param_list[4], in_param_list[5], in_param_list[6], in_param_list[7], yt, in_param_list[0], in_param_list[1], in_param_list[2]])
 
-    #lam1, lam2, lam3, lam4, lam5, yt, M11, M12, M22]
 
 
     m = THDM(Ndim = nVevs, mu4DMinLow = 246, mu4DMaxHigh = 10000, mu4DRef = 246.,

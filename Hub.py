@@ -28,7 +28,6 @@ def SearchGrid(construct_trn_data, keep_old_trn_data,
                 data_type2, train_network, load_network, save_network,
                 network_predicts, network_controls, sampling_method, 
                 optimize, num_processes):
-    #BSM_model = "THDM" 
 
     """
     Inputs
@@ -62,12 +61,12 @@ def SearchGrid(construct_trn_data, keep_old_trn_data,
         if not keep_old_trn_data:
             DH.InitializeDataFiles(data_type1=1)
 
-        print("\nPerforming sampling and filtering ...")
+        print("\nPerforming parameter space sampling ...")
         training_samples = DC.Sampling(exp_num_training_points, sampling_method)
         #in_param_lists, free_param_lists, fixed_param_lists = EvalFcn(training_samples)
         param_lists = EvalFcn(training_samples)
         print("Done.")
-        
+       
         #print(param_lists.shape[1])
         #sys.exit("Manual exit")
 
@@ -91,7 +90,7 @@ def SearchGrid(construct_trn_data, keep_old_trn_data,
             print("\n###################################################")
             print("NEURAL NETWORK PREDICTIONS")
 
-            print("\nPerforming sampling and filtering ...")
+            print("\nPerforming parameter space sampling ...")
             pred_samples = DC.Sampling(exp_num_pred_points, sampling_method)
             in_param_lists, free_param_lists, fixed_param_lists = EvalFcn(pred_samples)
             print("Done.")
@@ -122,7 +121,7 @@ def SearchGrid(construct_trn_data, keep_old_trn_data,
                 print("Saving true positive points to FDataFiles")
                 DH.SaveControlledPosPoints(data, data_type2)
 
-                PS.PlotGrid(data_type1=3, data_type2=data_type2, plot_seperate_constr=False, fig_name="FinalDataPlot.png")
+                #PS.PlotGrid(data_type1=3, data_type2=data_type2, plot_seperate_constr=False, fig_name="FinalDataPlot.png")
         
     #-----------------CATCHING BAD INPUTS---------------------
     if network_predicts and not (train_network or load_network):
@@ -149,6 +148,7 @@ def EvalFcn(samples):
             for param_name, dependency in zip (dep_param_names[i], dep_param_dependicies[i]):
                 dict_dep_param[param_name] = eval(dependency, globals(), dict_free_param | dict_const_param | dict_dep_param)
 
+        """
         ########### THDM Specific ##########
             if i==1:
                 # no complex couplings
@@ -176,20 +176,21 @@ def EvalFcn(samples):
                     should_break = True
                     break
 
-
             if should_break:
                 break
         if should_break:
             continue
         ####################################
+        """
+
         ########### TC Specific ############
-        #lam8, mT, mS = dict_dep_param["lam8"], dict_dep_param["mT"], dict_dep_param["mS"]
-        #if abs(round(lam8.imag,5)) > 0:
-        #    return None, None, None
-        #else:
-        #    dict_dep_param["lam8"] = lam8.real
-        #if mT<0 or mS<0:
-        #    return None, None, None
+        lam8, mT, mS = dict_dep_param["lam8"], dict_dep_param["mT"], dict_dep_param["mS"]
+        if abs(round(lam8.imag,5)) > 0:
+            continue
+        else:
+            dict_dep_param["lam8"] = lam8.real
+        if mT<0 or mS<0:
+            continue
         ######################################
 
 
@@ -314,7 +315,7 @@ def ComputeChunkSize(num_samples, num_processes, ratio):
 SearchGrid(
         construct_trn_data=True,
         keep_old_trn_data=False,    # Only set to True if data files already contain data
-        data_type2='both', # 'collider','cosmic','both'
+        data_type2='cosmic', # 'collider','cosmic','both'
         train_network=False,
         load_network=False,
         save_network=False,  # only saved network loads for predictions, fix!
@@ -322,7 +323,7 @@ SearchGrid(
         network_controls=False,
         sampling_method=1,   # 1=sobol sequence, 2=InDataFile
         optimize=True,
-        num_processes = 25
+        num_processes = 50
         )
 
 

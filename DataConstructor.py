@@ -148,13 +148,6 @@ def AnalysisCosmic(in_param_list):
         transition_order = -1     #Cosmic analysis was (manually) interrupted or CosmoTrnasitions crashed mysteriously
     
 
-    # Try writing data into data files
-    #try:
-    #    DH.WriteLabelsGW(transition_order, alphaa, betaa, fpeak, ompeak, STTn, STTp, dSTdTTn, dSTdTTp, Tc, Tn, Tp, low_vev, high_vev, dV, dVdT, action, data_type1)
-    #except:
-    #    print("COULD NOT WRITE FINAL RESULTS INTO DATA FILES")
-    #    transition_order = 99
-    #    DH.WriteEmptyLabelsGW(transition_order, data_type1)
     cosmic_output = [transition_order, alphaa, betaa, fpeak, ompeak, STTn, STTp, dSTdTTn, dSTdTTp, Tc, Tn, Tp, low_vev, high_vev, dV, dVdT, action]
 
     print("Cosmic analysis {} done".format(rand_num))
@@ -186,18 +179,6 @@ def Sampling(exp_num_points, sampling_method):
     else:
         print("Raise error")
     return input_samples
-
-#def Sampling2():    # NOT USED
-#    with open("InDataFile_Param", "r") as f:
-#        l1 = f.readlines()
-#    with open("InDataFile_Masses", "r") as f:
-#        l2 = f.readlines()
-#    InParam = np.array([l1[i].split() for i in range(2,len(l1))], dtype=object)
-#    InParam = InParam.astype(np.float64)
-#    Masses = np.array([l2[i].split() for i in range(2,len(l2))], dtype=object)
-#    Masses = Masses.astype(np.float64)
-#    num_training_points = len(l1)
-#    return InParam, Masses, num_traning_points
 
 
 def RunSPheno():
@@ -261,7 +242,7 @@ def RunCosmoTransitions(in_param_list):
 
 
 
-    m = THDM(Ndim = nVevs, mu4DMinLow = 246, mu4DMaxHigh = 10000, mu4DRef = 246.,
+    m = CT_class(Ndim = nVevs, mu4DMinLow = 246, mu4DMaxHigh = 10000, mu4DRef = 246.,
          params4DRef = params_4D_ref, highTOptions = {},
          solve4DRGOptions = {},
          params3DUSInterpolOptions = {}, scaleFactor = 1, mu3DSPreFactor = 1,

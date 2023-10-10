@@ -253,8 +253,10 @@ def CreateLabels(l_col, l_gw, data_type2, print_summary):
         labels_omega = [1 if item>10**(omega_exp) else 0 for item in omega]
         labels_strongPT = [1 if abs(item)>1 else 0 for item in strongPT_criteria]
         labels_GW = np.multiply(np.multiply(labels_PTO, labels_omega), labels_strongPT)
+        labels_CT_ran = [1 if (item == 0 or item == 1 or item == 2) else 0 for item in PTO]
 
         if print_summary:
+            print("Number of points that did not crash", np.sum(labels_CT_ran))
             print("Number of points giving first-order phase transitions", np.sum(labels_PTO))
             print("Number of points giving detectable first-order phase transitions", np.sum(labels_omega))
             print("Number of points giving strong first-order phase transitions", np.sum(labels_strongPT))

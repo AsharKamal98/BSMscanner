@@ -71,7 +71,9 @@ def PlotGrid(data_type1, data_type2, plot_seperate_constr, fig_name):
         if data_type2 == "collider":
             # 0.0="BG", 1.0="U", 2.0="H", 3.0="STU"
             palette = {"BG" : "black", "U" : "green", "H" : "blue", "STU" : "red"}
-            data  = NW.Boosting(data, under_sample={0.0 : 350, 1.0 : 350, 2.0 : 350, 3.0 : 350}, over_sample=None)
+            us = None #{0.0 : 350, 1.0 : 350, 2.0 : 350, 3.0 : 350}
+            os = None
+            data  = NW.Boosting(data, under_sample=us, over_sample=os)
         elif data_type2 == "cosmic":
             # 0.0="BG", 1.0="FOPT", 2.0="S-FOPT", 3.0="D-FOPT"
             palette = {"BG" : "black", "FOPT" : "orange", "S-FOPT" : "dodgerblue", "D-FOPT" : "darkgreen"}

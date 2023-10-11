@@ -55,8 +55,7 @@ def SearchGrid(construct_trn_data, keep_old_trn_data,
    
     #------------CONSTRUCT COLLIDER TRAINING DATA FOR NETWORK----------------
     if construct_trn_data:
-        print("\n-------------- TRAINING DATA CONSTRUCTION --------------")
-
+        print("\n---------------- TRAINING DATA CONSTRUCTION -----------------")
         # Initialize data filesi (TDataFiles)
         if not keep_old_trn_data:
             DH.InitializeDataFiles(data_type1=1)
@@ -78,25 +77,23 @@ def SearchGrid(construct_trn_data, keep_old_trn_data,
         DH.ReadFiles(data_type1=1, data_type2=data_type2)
         PS.PlotGrid(data_type1=1, data_type2=data_type2, plot_seperate_constr=False, fig_name="TrainingDataPlot.png")
 
-    #----------------------------TRAIN NETWORK-------------------------------
+    #----------------------------TRAIN/LOAD NETWORK-------------------------------
     if train_network or load_network:
-        print("\n###################################################")
-        print("TRAINING/LOADING NEURAL NETWORK")
+        print("\n---------------- INITIALIZING NEURAL NETWORK ----------------")
         subprocess.run(["mkdir", "-p", "TrainedANN"])
         model, norm_var = NW.TrainANN(data_type2, under_sample, over_sample, load_network, train_network, save_network)
 
     #------------TRAINED NETWORK MAKES PREDICTIONS----------------
         if network_predicts:
-            print("\n###################################################")
-            print("NEURAL NETWORK PREDICTIONS")
+            print("\n--------------- NEURAL NETWORK PREDICTIONS --------------")
 
             print("\nPerforming parameter space sampling ...")
             pred_samples = DC.Sampling(exp_num_pred_points, sampling_method)
-            in_param_lists, free_param_lists, fixed_param_lists = EvalFcn(pred_samples)
+            param_lists = EvalFcn(pred_samples)
             print("Done.")
 
             print("\nNeural network is making predictions ...")
-            predictions =  np.array(NW.Predict(model, norm_var, free_param_lists))
+            predictions =  np.array(NW.Predict(model, norm_var, param_lists[1]))
             # The positive prediction indicies can be matched to data written in files above.
             pos_prediction_indicies = (np.where(predictions==1)[0])
             print("Done. Predicted", np.sum(predictions), "positive points out of", predictions.shape[0], "points\n")
@@ -106,12 +103,13 @@ def SearchGrid(construct_trn_data, keep_old_trn_data,
             if network_controls:
                 DH.InitializeDataFiles(data_type1=2)
 
-                in_param_lists = in_param_lists[pos_prediction_indicies]
-                free_param_lists = free_param_lists[pos_prediction_indicies]
-                fixed_param_lists = fixed_param_lists[pos_prediction_indicies]
+                #in_param_lists = in_param_lists[pos_prediction_indicies]
+                #free_param_lists = free_param_lists[pos_prediction_indicies]
+                #fixed_param_lists = fixed_param_lists[pos_prediction_indicies]
+                param_lists = param_lists[:,pos_prediction_indicies]
 
                 print("\nAnalyzing positively predicted points")
-                RunHEPs([in_param_lists, free_param_lists, fixed_param_lists], optimize, num_processes, data_type2, data_type1=2)
+                RunHEPs(param_lists, optimize, num_processes, data_type2, data_type1=2)
                 print("Done.")
 
                 # Summary
@@ -313,17 +311,17 @@ def ComputeChunkSize(num_samples, num_processes, ratio):
     return 1
 
 SearchGrid(
-        construct_trn_data=True,
+        construct_trn_data=False,
         keep_old_trn_data=False,    # Only set to True if data files already contain data
-        data_type2='cosmic', # 'collider','cosmic','both'
+        data_type2='collider', # 'collider','cosmic','both'
         train_network=False,
-        load_network=False,
+        load_network=True,
         save_network=False,  # only saved network loads for predictions, fix!
-        network_predicts=False,
-        network_controls=False,
-        sampling_method=1,   # 1=sobol sequence, 2=InDataFile
+        network_predicts=True,
+        network_controls=True,
+        sampling_method=1,  # REMOVE!
         optimize=True,
-        num_processes = 50
+        num_processes = 1
         )
 
 

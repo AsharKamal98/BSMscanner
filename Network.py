@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import pickle
 import seaborn as sns
 import pandas as pd
+import sys
 
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'    # Silence tensorflow warnings
@@ -204,23 +205,24 @@ def NormalizeInput(X, new_scheme=True, mean=None, std=None):
 
 
 def TrainANN(data_type2, under_sample, over_sample, load_network, train_network, save_network):
+    ANN_path = "SavedANNs/{}-ANN".format(BSM_model)
     if load_network: 
-        print("Load trained neural network")
-        model = tf.keras.models.load_model("TrainedANN/Model")
-        with open("TrainedANN/Model_History.pkl", "rb") as f:
+        print("Loading trained neural network")
+        model = tf.keras.models.load_model("{}/Model".format(ANN_path))
+        with open("{}/Model_History.pkl".format(ANN_path), "rb") as f:
             history = pickle.load(f)
-        X_boosted_trn = np.load("TrainedANN/x_train.npy")
-        y_boosted_trn = np.load("TrainedANN/y_train.npy")
-        X_val = np.load("TrainedANN/x_val.npy")
-        y_val = np.load("TrainedANN/y_val.npy")
-        norm_var = np.load("TrainedANN/NormVariables.npy")
-        #print(model.summary())
+        X_boosted_trn = np.load("{}/x_train.npy".format(ANN_path))
+        y_boosted_trn = np.load("{}/y_train.npy".format(ANN_path))
+        X_val = np.load("{}/x_val.npy".format(ANN_path))
+        y_val = np.load("{}/y_val.npy".format(ANN_path))
+        norm_var = np.load("{}/NormVariables.npy".format(ANN_path))
+        print(model.summary())
 
     else:
         # Construct neural network
         model = ConstructModel()
         #print("\nNetwork architecture")
-        #print(model.summary())
+        print(model.summary())
    
         # Load data
         data = DH.ReadFiles(data_type1=1, data_type2=data_type2)
@@ -239,15 +241,15 @@ def TrainANN(data_type2, under_sample, over_sample, load_network, train_network,
         print("Network trained!")
 
         if save_network:
-            model.save("TrainedANN/Model")
-            with open("TrainedANN/Model_History.pkl", "wb") as f:
+            model.save("{}/Model".format(ANN_path))
+            with open("{}/Model_History.pkl".format(ANN_path), "wb") as f:
                 pickle.dump(history, f)
-            np.save("TrainedANN/x_train.npy", X_boosted_trn)
-            np.save("TrainedANN/y_train.npy", y_boosted_trn)
-            np.save("TrainedANN/x_val.npy", X_val)
-            np.save("TrainedANN/y_val.npy", y_val)
-            np.save("TrainedANN/NormVariables.npy", norm_var)
-            print("Saved network, its history and training/validation sets in the directory TrainedANN")
+            np.save("{}/x_train.npy".format(ANN_path), X_boosted_trn)
+            np.save("{}/y_train.npy".format(ANN_path), y_boosted_trn)
+            np.save("{}/x_val.npy".format(ANN_path), X_val)
+            np.save("{}/y_val.npy".format(ANN_path), y_val)
+            np.save("{}/NormVariables.npy".format(ANN_path), norm_var)
+            print("Saved network, its history and training/validation sets in the directory {}".format(ANN_path))
 
         #y = model.predict(X_val)
         #y = [1 if item > 0.5 else 0 for item in y]
@@ -271,7 +273,7 @@ def Predict(model, norm_var, X):
     #X = DH.ReadFreeParams(data_type1=2)
     X_norm = NormalizeInput(X, new_scheme=False, mean=mean, std=std)
 
-    y = model.predict(X_norm)
+    y = model.predict(X_norm.tolist())
     y = [1 if item > 0.5 else 0 for item in y]
 
     return y

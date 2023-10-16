@@ -145,6 +145,12 @@ def EvalFcn(samples):
         for i in range(num_inversions):
             for param_name, dependency in zip (dep_param_names[i], dep_param_dependicies[i]):
                 dict_dep_param[param_name] = eval(dependency, globals(), dict_free_param | dict_const_param | dict_dep_param)
+        # All couplings real
+        if abs(np.array(list(dict_dep_param.values())).imag).any() > 0.01:
+            continue
+        else:
+            dict_dep_param = {key: value.real for key, value in zip(dict_dep_param.keys(), dict_dep_param.values())}
+            
 
         """
         ########### THDM Specific ##########
@@ -181,6 +187,7 @@ def EvalFcn(samples):
         ####################################
         """
 
+        """
         ########### TC Specific ############
         lam8, mT, mS = dict_dep_param["lam8"], dict_dep_param["mT"], dict_dep_param["mS"]
         if abs(round(lam8.imag,5)) > 0:
@@ -190,7 +197,7 @@ def EvalFcn(samples):
         if mT<0 or mS<0:
             continue
         ######################################
-
+        """
 
         d = dict_free_param | dict_const_param | dict_dep_param
         in_param_list = series_in_param.map(d).to_numpy()
@@ -307,21 +314,21 @@ def ComputeChunkSize(num_samples, num_processes, ratio):
     chunksize, extra = divmod(num_samples, num_processes * ratio)
     if chunksize < 1:
         chunksize = 1
-    #return chunksize
-    return 1
+    return chunksize
+    #return 1
 
 SearchGrid(
-        construct_trn_data=False,
+        construct_trn_data=True,
         keep_old_trn_data=False,    # Only set to True if data files already contain data
         data_type2='collider', # 'collider','cosmic','both'
         train_network=False,
-        load_network=True,
+        load_network=False,
         save_network=False,  # only saved network loads for predictions, fix!
-        network_predicts=True,
-        network_controls=True,
+        network_predicts=False,
+        network_controls=False,
         sampling_method=1,  # REMOVE!
         optimize=True,
-        num_processes = 1
+        num_processes = 20
         )
 
 

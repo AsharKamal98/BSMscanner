@@ -57,7 +57,7 @@ mpl.rcParams["figure.figsize"] = [8.5, 5.5]
 
 
 
-def PlotGrid(data_type1, data_type2, plot_seperate_constr, fig_name):
+def PlotTData(data_type1, data_type2, plot_seperate_constr, fig_name):  # Do not need data_type1!
     """
     Add info
     """
@@ -71,7 +71,7 @@ def PlotGrid(data_type1, data_type2, plot_seperate_constr, fig_name):
         if data_type2 == "collider":
             # 0.0="BG", 1.0="U", 2.0="H", 3.0="STU"
             palette = {"BG" : "black", "U" : "green", "H" : "blue", "STU" : "red"}
-            us = None #{0.0 : 350, 1.0 : 350, 2.0 : 350, 3.0 : 350}
+            us = {0.0 : 350, 1.0 : 100, 2.0 : 300, 3.0 : 70}
             os = None
             data  = NW.Boosting(data, under_sample=us, over_sample=os)
         elif data_type2 == "cosmic":
@@ -86,7 +86,7 @@ def PlotGrid(data_type1, data_type2, plot_seperate_constr, fig_name):
         
         dct = {0.0 : "Neg", 1.0 : "Pos"}
         palette={"Neg" : "red", "Pos" : "blue"}
-        data  = NW.Boosting(data, under_sample={0.0 : 1000, 1.0 : 170}, over_sample=None)
+        data  = NW.Boosting(data, under_sample={0.0 : 56, 1.0 : 56}, over_sample=None)
 
     df_plot = pd.DataFrame(data, columns = series_free_param.tolist() + ["Constraints"])
     df_plot["Constraints"] = df_plot["Constraints"].map(dct)
@@ -98,8 +98,26 @@ def PlotGrid(data_type1, data_type2, plot_seperate_constr, fig_name):
     plt.savefig('Figures/{}'.format(fig_name))
 
 
+def PlotFData(data_type2, fig_name):
+    """
+    Add info
+    """
+    
+    print("Creating Plot: {}".format(fig_name), "See Figures directory")
 
+    data = DH.ReadFiles(data_type1=3, data_type2=data_type2, plot_seperate_constr=False, print_summary=False)
+        
+    dct = {0.0 : "Neg", 1.0 : "Pos"}
+    palette={"Neg" : "red", "Pos" : "blue"}
 
+    df_plot = pd.DataFrame(data, columns = series_free_param.tolist() + ["Constraints"])
+    df_plot["Constraints"] = df_plot["Constraints"].map(dct)
+
+    sns.set_style("whitegrid");
+    sns.pairplot(df_plot, hue="Constraints", palette=palette, plot_kws={"s": 2})
+
+    subprocess.run(["mkdir", "-p", "Figures"])
+    plt.savefig('Figures/{}'.format(fig_name))
 
 
 

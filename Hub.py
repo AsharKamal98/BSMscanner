@@ -75,7 +75,7 @@ def SearchGrid(construct_trn_data, keep_old_trn_data,
 
         # Print summary of training data and construct plots
         DH.ReadFiles(data_type1=1, data_type2=data_type2)
-        PS.PlotGrid(data_type1=1, data_type2=data_type2, plot_seperate_constr=False, fig_name="TrainingDataPlot.png")
+        PS.PlotTData(data_type1=1, data_type2=data_type2, plot_seperate_constr=False, fig_name="TrainingDataPlot.png")
 
     #----------------------------TRAIN/LOAD NETWORK-------------------------------
     if train_network or load_network:
@@ -119,7 +119,7 @@ def SearchGrid(construct_trn_data, keep_old_trn_data,
                 print("Saving true positive points to FDataFiles")
                 DH.SaveControlledPosPoints(data, data_type2)
 
-                #PS.PlotGrid(data_type1=3, data_type2=data_type2, plot_seperate_constr=False, fig_name="FinalDataPlot.png")
+                PS.PlotFData(data_type2=data_type2, fig_name="FinalDataPlot.png")
         
     #-----------------CATCHING BAD INPUTS---------------------
     if network_predicts and not (train_network or load_network):
@@ -319,7 +319,7 @@ def ComputeChunkSize(num_samples, num_processes, ratio):
 
 SearchGrid(
         construct_trn_data=True,
-        keep_old_trn_data=False,    # Only set to True if data files already contain data
+        keep_old_trn_data=True,    # Only set to True if data files already contain data
         data_type2='collider', # 'collider','cosmic','both'
         train_network=False,
         load_network=False,
@@ -328,7 +328,7 @@ SearchGrid(
         network_controls=False,
         sampling_method=1,  # REMOVE!
         optimize=True,
-        num_processes = 20
+        num_processes = 1
         )
 
 

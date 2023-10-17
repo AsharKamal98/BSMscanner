@@ -3,7 +3,7 @@
 #===================================================================================================================================
 num_h = "2"     # Use citation marks 
 num_hp = "0"    # Use citation marks
-exp_num_training_points = 14 #15 #20=19h #16=2h
+exp_num_training_points = 1 #14 #15 #20=19h #16=2h
 num_training_points = 2**(exp_num_training_points)
 exp_num_pred_points = 10
 num_pred_points = 2**(exp_num_pred_points)
@@ -22,8 +22,8 @@ d_TSM = { \
 
 
 
-#BSM_model = "THDM"
-d_THDM = { \
+BSM_model = "THDM"
+d = { \
 
     "Parameter name": ['M11','M22','M12','lam1','lam2','lam3','lam4','lam5','TanBeta','mC','mA','mh','mH', 'v1', 'v2'], \
 
@@ -47,8 +47,8 @@ d_THDM = { \
     }
 
 
-BSM_model = "SSM"
-d = { \
+#BSM_model = "SSM"
+d_SSM = { \
 
     "Parameter name": ['mu2','MS','K1','kappa','lam','K2','lamS','vS','mh','mH'], \
 
@@ -60,7 +60,6 @@ d = { \
 
     "Dependence" : ["-(1/2) * (2*K1*vS + K2*vS**2 + lam*v**2)",
                     "-(1/(2*vS)) * (2*kappa*vS**2 + 4*lamS*vS**3 + K1*v**2 + K2*vS*v**2)",
-                    #"-(1/(2*vS)) * (2*kappa*vS**2)",
                     "-K2*vS - (1/(v**2)) * cmath.sqrt(-v**2 * (mh**2-lam*v**2) * (mH**2-lam*v**2))",
                     "-(1/(2*vS**2)) * (-2*vS*(mh**2 + mH**2 - 4*lamS*vS**2) + (K2 + 2*lam)*vS*v**2 + cmath.sqrt(-v**2 * (mh**2-lam*v**2) * (mH**2-lam*v**2)))",
                     None, None, None, None, None, None], \
@@ -81,10 +80,10 @@ HS_path = "higgssignals-2.6.2/build"
 CT_path = "DRalgo-1.0.2-beta/examples"
 #CT_infile_name = "LS_TColor_DRPython" #Remove .py
 #CT_class_name = "LS_TColor"     # Not being used
-CT_infile_name = "THDM_DRPython" #Remove .py
-CT_class_name = "THDM"  #NOT USED
-
-
+#CT_infile_name = "THDM_DRPython" #Remove .py
+#CT_class_name = "THDM" 
+CT_infile_name = "SSM_DRPython" #Remove .py
+CT_class_name = "SSM"
 
 ########################################################### ANN SETTINGS #######################################################
 #================================================================================================================================

@@ -90,10 +90,10 @@ def AnalysisCosmic(in_param_list):
     alphaa,betaa,fpeak,ompeak,STTn,STTp,dSTdTTn,dSTdTTp,Tc,Tn,Tp,low_vev,high_vev,dV,dVdT,action = 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
     try:
         # Re-direct messages when running CosmoTransitions
-        with open(os.devnull, 'w') as null_file:
-            with contextlib.redirect_stdout(null_file), contextlib.redirect_stderr(null_file):
-                m = RunCosmoTransitions(in_param_list)
-                tn_trans = m.TnTrans
+        #with open(os.devnull, 'w') as null_file:
+        #    with contextlib.redirect_stdout(null_file), contextlib.redirect_stderr(null_file):
+        m = RunCosmoTransitions(in_param_list)
+        tn_trans = m.TnTrans
 
         # If CT has found phase transition(s) ...
         num_of_PTs = len(tn_trans)
@@ -234,12 +234,13 @@ def RunCosmoTransitions(in_param_list):
     gssq = pow(1.2104, 2)
 
     ###### TC Specific ######
-    v = 246.220569 
-    mH = -in_param_list[8] * v**2 #Fix!
-    params_4D_ref = np.array([gwsq, gYsq, gssq, in_param_list[9], in_param_list[10], in_param_list[4], in_param_list[5], in_param_list[6], in_param_list[7], in_param_list[8], in_param_list[0], in_param_list[1], in_param_list[2], in_param_list[3], yt, mH, in_param_list[12], in_param_list[11]])
+    #v = 246.220569 
+    #mH = -in_param_list[8] * v**2 #Fix!
+    #params_4D_ref = np.array([gwsq, gYsq, gssq, in_param_list[9], in_param_list[10], in_param_list[4], in_param_list[5], in_param_list[6], in_param_list[7], in_param_list[8], in_param_list[0], in_param_list[1], in_param_list[2], in_param_list[3], yt, mH, in_param_list[12], in_param_list[11]])
     ##### THDM Specific #####
     #params_4D_ref = np.array([gwsq, gYsq, gssq, in_param_list[3], in_param_list[4], in_param_list[5], in_param_list[6], in_param_list[7], yt, in_param_list[0], in_param_list[1], in_param_list[2]])
-
+    ##### SSM Specific #####
+    params_4D_ref = np.array([gwsq, gYsq, gssq, in_param_list[5], in_param_list[6], in_param_list[4], in_param_list[2], in_param_list[3], yt, in_param_list[1], in_param_list[0]])
 
 
     m = CT_class(Ndim = nVevs, mu4DMinLow = 246, mu4DMaxHigh = 10000, mu4DRef = 246.,

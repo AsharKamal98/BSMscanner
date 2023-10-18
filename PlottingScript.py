@@ -105,7 +105,7 @@ def PlotFData(data_type2, fig_name):
     
     print("Creating Plot: {}".format(fig_name), "See Figures directory")
 
-    data = DH.ReadFiles(data_type1=3, data_type2=data_type2, plot_seperate_constr=False, print_summary=False)
+    data = DH.ReadFiles(data_type1=3, data_type2=data_type2, seperate_labels=False, print_summary=False)
         
     dct = {0.0 : "Neg", 1.0 : "Pos"}
     palette={"Neg" : "red", "Pos" : "blue"}

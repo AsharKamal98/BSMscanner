@@ -80,16 +80,18 @@ def Train(model, X_trn, y_trn, X_val, y_val):
     history = model.fit(
         X_trn,
         y_trn,
-        batch_size=3000,
+        batch_size=batch_size,
         epochs=network_epochs,
         validation_data = (X_val, y_val),
-        class_weight = {0: 1.0, 1: 10.0},
+        class_weight = {0: 1.0, 1: class_weight},
         verbose=network_verbose,
         )
     return history.history, model
 
 
 def PlotMetric(history,y_trn,y_val):
+    
+    ANN_path = "SavedANNs/{}-ANN".format(BSM_model)
     keys = [item for item in history.keys()]
     #print(keys, "\n")
 
@@ -142,12 +144,12 @@ def PlotMetric(history,y_trn,y_val):
     print("Exhaustiveness", round(avg_Exhaustiveness[-1], 4), "       Val Exhaustiveness", round(avg_val_Exhaustiveness[-1], 4))
 
 
-    print("\nMaking plots to visualize ANN training") 
+    print("\nMaking plots to visualize ANN training ...") 
     plt.plot(np.arange(num_epochs-5), (history)['loss'][5:], 'b', label="loss")
     plt.plot(np.arange(num_epochs-5), (history)['val_loss'][5:], 'r', label="val loss")
     plt.legend()
     #plt.show()
-    plt.savefig('TrainedANN/LossPlot.pdf')
+    plt.savefig('{}/LossPlot.pdf'.format(ANN_path))
     plt.figure()
 
     plt.plot(np.arange(num_epochs), history[keys[1]], 'b', label="accuracy")
@@ -155,15 +157,15 @@ def PlotMetric(history,y_trn,y_val):
     plt.ylim(0,1.1)
     plt.legend()
     #plt.show()
-    plt.savefig('TrainedANN/AccuracyPlot.pdf')
+    plt.savefig('{}/AccuracyPlot.pdf'.format(ANN_path))
     plt.figure()
 
     plt.plot(Elist, avg_Efficiency, linestyle=':', color='blue', label="Efficiency")
     plt.plot(Elist, avg_val_Efficiency, linestyle=':', color='red', label="Val Efficiency")
-    plt.ylim(-0.001,1.0)
+    plt.ylim(-0.001,0.08)
     plt.legend()
     #plt.show()
-    plt.savefig('TrainedANN/EfficiencyPlot.pdf')
+    plt.savefig('{}/EfficiencyPlot.pdf'.format(ANN_path))
     plt.figure()
 
     plt.plot(Elist, avg_Exhaustiveness, linestyle=':', color='blue', label="Exhaustiveness")
@@ -171,7 +173,7 @@ def PlotMetric(history,y_trn,y_val):
     plt.ylim(-0.02,1.1)
     plt.legend()
     #plt.show()
-    plt.savefig('TrainedANN/ExhaustivenessPlot.pdf')
+    plt.savefig('{}/ExhaustivenessPlot.pdf'.format(ANN_path))
     plt.figure()
 
     plt.plot(Elist, avg_TP, linestyle=':', color='blue', label="True Positives")
@@ -180,15 +182,17 @@ def PlotMetric(history,y_trn,y_val):
     plt.axhline(y = np.sum(y_val), color = 'red')
     plt.legend()
     #plt.show()
-    plt.savefig('TrainedANN/TruePosPlot.pdf')
+    plt.savefig('{}/TruePosPlot.pdf'.format(ANN_path))
     plt.figure()
 
     plt.plot(Elist, avg_FP, linestyle=':', color='blue', label="False Positives")
     plt.plot(Elist, avg_val_FP, linestyle=':', color='red', label="Val False Positives")
     plt.legend()
     #plt.show()
-    plt.savefig('TrainedANN/FalsePosPlot.pdf')
+    plt.savefig('{}/FalsePosPlot.pdf'.format(ANN_path))
 
+    print("Done. See {} directory".format(ANN_path))
+    
     
     return None
 
@@ -227,12 +231,12 @@ def TrainANN(data_type2, under_sample, over_sample, load_network, train_network,
         # Load data
         data = DH.ReadFiles(data_type1=1, data_type2=data_type2)
         X, y = data[:,:-1], data[:,-1]
-        X_norm, norm_var = NormalizeInput(X)
+        X_norm, norm_var = NormalizeInput(X)    # Switch orders of boosting and normalizing!
 
         # Defining training and validation sets
         X_trn, X_val, y_trn, y_val = train_test_split(X_norm,y)
         data_boosted_trn = Boosting(np.c_[X_trn, y_trn], under_sample, over_sample)
-        X_boosted_trn, y_boosted_trn = data[:,:-1], data[:,-1]
+        X_boosted_trn, y_boosted_trn = data_boosted_trn[:,:-1], data_boosted_trn[:,-1]
 
     #print("\nSize of batch is", len(X_boosted_trn))
     if train_network:

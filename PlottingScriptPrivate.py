@@ -3,6 +3,7 @@ from UserInput import *
 from DerivedInput import *
 import DataHandling as DH
 import Network as NW
+import PlottingScript as PS
 
 # Import libraries
 import numpy as np
@@ -55,6 +56,18 @@ mpl.rcParams['axes.spines.top'] = False
 mpl.rcParams["figure.figsize"] = [8.5, 5.5]
 
 
+def PlotData(data_type1, data_type2):   # Change name
+    """
+    Add info
+    """
+
+    DH.ReadFiles(data_type1, data_type2)
+    if data_type1==1:
+        PS.PlotTData(data_type2, plot_seperate_constr=False, fig_name="TrainingDataPlot.png")
+    elif data_type1==3:
+        PS.PlotFData(data_type2, fig_name="FinalDataPlot.png")
+
+    return
 
 
 def PlotFDataSTESM(data_type2, fig_name):
@@ -90,4 +103,5 @@ def PlotFDataSTESM(data_type2, fig_name):
     print("Plot {}".format(fig_name), "See Figures directory")
 
 
-PlotFDataSTESM(data_type2="both", fig_name="TestFig.png")
+#PlotFDataSTESM(data_type2="both", fig_name="TestFig.png")
+PlotData(data_type1=1, data_type2='collider')

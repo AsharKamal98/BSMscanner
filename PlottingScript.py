@@ -57,14 +57,14 @@ mpl.rcParams["figure.figsize"] = [8.5, 5.5]
 
 
 
-def PlotTData(data_type1, data_type2, plot_seperate_constr, fig_name):  # Do not need data_type1!
+def PlotTData(data_type2, plot_seperate_constr, fig_name):
     """
     Add info
     """
     
     print("Creating Plot: {}".format(fig_name), "See Figures directory")
 
-    data = DH.ReadFiles(data_type1, data_type2, plot_seperate_constr, print_summary=False)
+    data = DH.ReadFiles(data_type1=1, data_type2=data_type2, seperate_labels=plot_seperate_constr, print_summary=False)
     
     if plot_seperate_constr:
         dct = {0.0 : "BG", 1.0 : "U", 2.0 : "H", 3.0 : "STU", 4.0 : "FOPT", 5.0 : "S-FOPT", 6.0 : "D-FOPT"}
@@ -86,7 +86,7 @@ def PlotTData(data_type1, data_type2, plot_seperate_constr, fig_name):  # Do not
         
         dct = {0.0 : "Neg", 1.0 : "Pos"}
         palette={"Neg" : "red", "Pos" : "blue"}
-        data  = NW.Boosting(data, under_sample={0.0 : 56, 1.0 : 56}, over_sample=None)
+        data  = NW.Boosting(data, under_sample={0.0 : 170, 1.0 : 170}, over_sample=None)
 
     df_plot = pd.DataFrame(data, columns = series_free_param.tolist() + ["Constraints"])
     df_plot["Constraints"] = df_plot["Constraints"].map(dct)

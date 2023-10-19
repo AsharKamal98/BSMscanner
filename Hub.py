@@ -75,12 +75,12 @@ def SearchGrid(construct_trn_data, keep_old_trn_data,
 
         # Print summary of training data and construct plots
         DH.ReadFiles(data_type1=1, data_type2=data_type2)
-        PS.PlotTData(data_type1=1, data_type2=data_type2, plot_seperate_constr=False, fig_name="TrainingDataPlot.png")
+        PS.PlotTData(data_type2=data_type2, plot_seperate_constr=False, fig_name="TrainingDataPlot.png")
 
     #----------------------------TRAIN/LOAD NETWORK-------------------------------
     if train_network or load_network:
         print("\n---------------- INITIALIZING NEURAL NETWORK ----------------")
-        subprocess.run(["mkdir", "-p", "TrainedANN"])
+        subprocess.run(["mkdir", "-p", "SavedANNs/{}-ANN".format(BSM_model)])
         model, norm_var = NW.TrainANN(data_type2, under_sample, over_sample, load_network, train_network, save_network)
 
     #------------TRAINED NETWORK MAKES PREDICTIONS----------------
@@ -318,12 +318,12 @@ def ComputeChunkSize(num_samples, num_processes, ratio):
     #return 1
 
 SearchGrid(
-        construct_trn_data=True,
-        keep_old_trn_data=True,    # Only set to True if data files already contain data
+        construct_trn_data=False,
+        keep_old_trn_data=False,    # Only set to True if data files already contain data
         data_type2='collider', # 'collider','cosmic','both'
-        train_network=False,
+        train_network=True,
         load_network=False,
-        save_network=False,  # only saved network loads for predictions, fix!
+        save_network=True,  # only saved network loads for predictions, fix!
         network_predicts=False,
         network_controls=False,
         sampling_method=1,  # REMOVE!

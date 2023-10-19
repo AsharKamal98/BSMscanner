@@ -90,10 +90,10 @@ def AnalysisCosmic(in_param_list):
     alphaa,betaa,fpeak,ompeak,STTn,STTp,dSTdTTn,dSTdTTp,Tc,Tn,Tp,low_vev,high_vev,dV,dVdT,action = 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
     try:
         # Re-direct messages when running CosmoTransitions
-        #with open(os.devnull, 'w') as null_file:
-        #    with contextlib.redirect_stdout(null_file), contextlib.redirect_stderr(null_file):
-        m = RunCosmoTransitions(in_param_list)
-        tn_trans = m.TnTrans
+        with open(os.devnull, 'w') as null_file:
+            with contextlib.redirect_stdout(null_file), contextlib.redirect_stderr(null_file):
+                m = RunCosmoTransitions(in_param_list)
+                tn_trans = m.TnTrans
 
         # If CT has found phase transition(s) ...
         num_of_PTs = len(tn_trans)

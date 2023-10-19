@@ -3,7 +3,7 @@
 #===================================================================================================================================
 num_h = "2"     # Use citation marks 
 num_hp = "0"    # Use citation marks
-exp_num_training_points = 1 #14 #15 #20=19h #16=2h
+exp_num_training_points = 7 #14 #15 #20=19h #16=2h
 num_training_points = 2**(exp_num_training_points)
 exp_num_pred_points = 10
 num_pred_points = 2**(exp_num_pred_points)
@@ -87,10 +87,13 @@ CT_class_name = "SSM"
 
 ########################################################### ANN SETTINGS #######################################################
 #================================================================================================================================
-network_verbose=False
-network_epochs=200
-under_sample=0.1
+network_verbose=True
+network_epochs=500
+under_sample=0.02
 over_sample=None
+class_weight=1.0
+batch_size=1500
+
 
 pvalue_threshold = 0.05
 S_threshold = [-0.02, 0.10]

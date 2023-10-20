@@ -115,7 +115,8 @@ def SearchGrid(construct_trn_data, keep_old_trn_data,
                 # Summary
                 data = DH.ReadFiles(data_type1=2, data_type2=data_type2)
 
-                DH.InitializeDataFiles(data_type1=3)
+                if not keep_old_trn_data:
+                    DH.InitializeDataFiles(data_type1=3)
                 print("Saving true positive points to FDataFiles")
                 DH.SaveControlledPosPoints(data, data_type2)
 
@@ -151,38 +152,20 @@ def EvalFcn(samples):
         else:
             dict_dep_param = {key: value.real for key, value in zip(dict_dep_param.keys(), dict_dep_param.values())}
             
-
+        
         """
         ########### THDM Specific ##########
-            if i==1:
-                # no complex couplings
-                lam3 = dict_dep_param["lam3"]
-                if abs(round(lam3.imag,5)) == 0:
-                    dict_dep_param["lam3"] = lam3.real
-                    #return None, None, None
-                # Exit the inner two loops and continue to next sample
-                else:
-                    should_break = True
-                    break
-
-                # Boundedness from below
-                lam1 = dict_free_param["lam1"]
-                lam2 = dict_free_param["lam2"]
-                lam3 = dict_dep_param["lam3"]
-                lam4 = dict_dep_param["lam4"]
-                lam5 = dict_dep_param["lam5"]
-                prod = -cmath.sqrt(lam1*lam2)
-                if lam1 < 0 or lam2 < 0 or lam3 < prod or lam3+lam4-lam5 < prod:
-                    should_break = True
-                    break
-                lambdas = [lam1,lam2,lam3,lam4,lam5]
-                if any(abs(lam) > 4*np.pi for lam in lambdas):
-                    should_break = True
-                    break
-
-            if should_break:
-                break
-        if should_break:
+        # Boundedness from below
+        lam1 = dict_free_param["lam1"]
+        lam2 = dict_free_param["lam2"]
+        lam3 = dict_dep_param["lam3"]
+        lam4 = dict_dep_param["lam4"]
+        lam5 = dict_dep_param["lam5"]
+        prod = -cmath.sqrt(lam1*lam2)
+        if lam1 < 0 or lam2 < 0 or lam3 < prod or lam3+lam4-lam5 < prod:
+            continue
+        lambdas = [lam1,lam2,lam3,lam4,lam5]
+        if any(abs(lam) > 4*np.pi for lam in lambdas):
             continue
         ####################################
         """
@@ -190,10 +173,6 @@ def EvalFcn(samples):
         """
         ########### TC Specific ############
         lam8, mT, mS = dict_dep_param["lam8"], dict_dep_param["mT"], dict_dep_param["mS"]
-        if abs(round(lam8.imag,5)) > 0:
-            continue
-        else:
-            dict_dep_param["lam8"] = lam8.real
         if mT<0 or mS<0:
             continue
         ######################################

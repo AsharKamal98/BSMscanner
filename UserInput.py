@@ -3,11 +3,11 @@
 #===================================================================================================================================
 num_h = "2"     # Use citation marks 
 num_hp = "0"    # Use citation marks
-exp_num_training_points = 7 #14 #15 #20=19h #16=2h
+exp_num_training_points = 13 #14 #15 #20=19h #16=2h
 num_training_points = 2**(exp_num_training_points)
 exp_num_pred_points = 10
 num_pred_points = 2**(exp_num_pred_points)
-CT_wait_time = 2.5
+CT_wait_time = 3.0
 
 
 #BSM_model = "TSM"
@@ -54,7 +54,7 @@ d_SSM = { \
 
     "LesHouches number": [1, 2, 3, 4, 5, 6, 7, 8, None, None], \
 
-    "Range start" : [None, None, None, None, -12, -12, -12, 50, 125.25, 125.25], \
+    "Range start" : [None, None, None, None, 0, -12, 0, 50, 125.25, 125.25], \
 
     "Range end" :   [None, None, None,  None,  12, 12, 12, 1000, 125.25, 2000], \
 

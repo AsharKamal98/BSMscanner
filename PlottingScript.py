@@ -86,7 +86,7 @@ def PlotTData(data_type2, plot_seperate_constr, fig_name):
         
         dct = {0.0 : "Neg", 1.0 : "Pos"}
         palette={"Neg" : "red", "Pos" : "blue"}
-        data  = NW.Boosting(data, under_sample={0.0 : 170, 1.0 : 170}, over_sample=None)
+        data  = NW.Boosting(data, under_sample={0.0 : 10, 1.0 : 10}, over_sample=None)
 
     df_plot = pd.DataFrame(data, columns = series_free_param.tolist() + ["Constraints"])
     df_plot["Constraints"] = df_plot["Constraints"].map(dct)

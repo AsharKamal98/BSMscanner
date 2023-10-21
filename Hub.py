@@ -178,6 +178,15 @@ def EvalFcn(samples):
         ######################################
         """
 
+        """
+        ########### TC Specific ############
+        lam, lamS = dict_free_param["lam"], dict_free_param["lamS"]
+        if lam < 0 or lamS < 0:
+            continue
+        ######################################
+        """
+
+
         d = dict_free_param | dict_const_param | dict_dep_param
         in_param_list = series_in_param.map(d).to_numpy()
         free_param_list = series_free_param.map(d).to_numpy() # Note, this is the sample variable
@@ -293,21 +302,21 @@ def ComputeChunkSize(num_samples, num_processes, ratio):
     chunksize, extra = divmod(num_samples, num_processes * ratio)
     if chunksize < 1:
         chunksize = 1
-    return chunksize
-    #return 1
+    #return chunksize
+    return 1
 
 SearchGrid(
-        construct_trn_data=False,
+        construct_trn_data=True,
         keep_old_trn_data=False,    # Only set to True if data files already contain data
-        data_type2='collider', # 'collider','cosmic','both'
-        train_network=True,
+        data_type2='both', # 'collider','cosmic','both'
+        train_network=False,
         load_network=False,
-        save_network=True,  # only saved network loads for predictions, fix!
+        save_network=False,  # only saved network loads for predictions, fix!
         network_predicts=False,
         network_controls=False,
         sampling_method=1,  # REMOVE!
         optimize=True,
-        num_processes = 1
+        num_processes = 5
         )
 
 

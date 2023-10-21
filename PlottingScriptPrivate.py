@@ -55,6 +55,15 @@ mpl.rcParams['axes.spines.right'] = False
 mpl.rcParams['axes.spines.top'] = False
 mpl.rcParams["figure.figsize"] = [8.5, 5.5]
 
+def ReadData(data_type1, data_type2):   # Change name
+    """
+    Add info
+    """
+
+    DH.ReadFiles(data_type1, data_type2)
+    return
+
+
 
 def PlotData(data_type1, data_type2):   # Change name
     """
@@ -104,4 +113,6 @@ def PlotFDataSTESM(data_type2, fig_name):
 
 
 #PlotFDataSTESM(data_type2="both", fig_name="TestFig.png")
-PlotData(data_type1=1, data_type2='collider')
+#PlotData(data_type1=1, data_type2='collider')
+
+ReadData(data_type1=1, data_type2='both')

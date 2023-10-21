@@ -95,23 +95,23 @@ def SaveControlledPosPoints(data, data_type2):
     # Save free and fixed parameter values corresponding to positive points in FDataFiles
     with open("DataFiles/PDataFile_FreeParam", "r") as f:
         l = np.array(f.readlines())
-    with open("DataFiles/FDataFile_FreeParam", "w") as f:
+    with open("DataFiles/FDataFile_FreeParam", "a") as f:
         f.writelines(l[pos_points_indicies+2])
     with open("DataFiles/PDataFile_FixedParam", "r") as f:
         l = np.array(f.readlines())
-    with open("DataFiles/FDataFile_FixedParam", "w") as f:
+    with open("DataFiles/FDataFile_FixedParam", "a") as f:
         f.writelines(l[pos_points_indicies+2])
 
     # Save results of positive points in FDataFiles
     if data_type2=='both' or data_type2=='collider':
         with open("DataFiles/PDataFile_Labels_Col", "r") as f:
             l = np.array(f.readlines())
-        with open("DataFiles/FDataFile_Labels_Col", "w") as f:
+        with open("DataFiles/FDataFile_Labels_Col", "a") as f:
             f.writelines(l[pos_points_indicies+2])
     if data_type2=='both' or data_type2=='cosmic':
         with open("DataFiles/PDataFile_Labels_GW", "r") as f:
             l = np.array(f.readlines())
-        with open("DataFiles/FDataFile_Labels_GW", "w") as f:
+        with open("DataFiles/FDataFile_Labels_GW", "a") as f:
             f.writelines(l[pos_points_indicies+2])
 
 

@@ -115,4 +115,4 @@ def PlotFDataSTESM(data_type2, fig_name):
 #PlotFDataSTESM(data_type2="both", fig_name="TestFig.png")
 #PlotData(data_type1=1, data_type2='collider')
 
-ReadData(data_type1=1, data_type2='both')
+ReadData(data_type1=3, data_type2='both')

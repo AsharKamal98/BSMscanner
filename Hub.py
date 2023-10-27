@@ -24,10 +24,9 @@ import time
 import random
 
 
-def SearchGrid(construct_trn_data, keep_old_trn_data,
+def SearchGrid(construct_trn_data, keep_old_data,
                 data_type2, train_network, load_network, save_network,
-                network_predicts, network_controls, sampling_method, 
-                optimize, num_processes):
+                network_predicts, network_controls, optimize, num_processes):
 
     """
     Inputs
@@ -44,9 +43,6 @@ def SearchGrid(construct_trn_data, keep_old_trn_data,
         If network should be trained or not
     network_predicts: boolean
         If network should predict good points after it has trained
-    sampling_method: int (1,2)
-        1 if sobol sequence constructed and used as sampling
-        2 if sampling is taken from the InDataFile. Used for running multiple nodes
     optimize: boolean
         Used if construct_collider_data==True and construct_cosmic_data==True. Cosmic constraints
         for a point will only be checked if the point already satisfies collider constraints,
@@ -57,11 +53,11 @@ def SearchGrid(construct_trn_data, keep_old_trn_data,
     if construct_trn_data:
         print("\n---------------- TRAINING DATA CONSTRUCTION -----------------")
         # Initialize data filesi (TDataFiles)
-        if not keep_old_trn_data:
+        if not keep_old_data:
             DH.InitializeDataFiles(data_type1=1)
 
         print("\nPerforming parameter space sampling ...")
-        training_samples = DC.Sampling(exp_num_training_points, sampling_method)
+        training_samples = DC.Sampling(exp_num_training_points)
         #in_param_lists, free_param_lists, fixed_param_lists = EvalFcn(training_samples)
         param_lists = EvalFcn(training_samples)
         print("Done.")
@@ -78,6 +74,8 @@ def SearchGrid(construct_trn_data, keep_old_trn_data,
         PS.PlotTData(data_type2=data_type2, plot_seperate_constr=False, fig_name="TrainingDataPlot.png")
 
     #----------------------------TRAIN/LOAD NETWORK-------------------------------
+    if train_network and load_network:
+        sys.exit("Both train_network and load_network have been set to True. Choose one")
     if train_network or load_network:
         print("\n---------------- INITIALIZING NEURAL NETWORK ----------------")
         subprocess.run(["mkdir", "-p", "SavedANNs/{}-ANN".format(BSM_model)])
@@ -88,7 +86,7 @@ def SearchGrid(construct_trn_data, keep_old_trn_data,
             print("\n--------------- NEURAL NETWORK PREDICTIONS --------------")
 
             print("\nPerforming parameter space sampling ...")
-            pred_samples = DC.Sampling(exp_num_pred_points, sampling_method)
+            pred_samples = DC.Sampling(exp_num_pred_points)
             param_lists = EvalFcn(pred_samples)
             print("Done.")
 
@@ -115,7 +113,7 @@ def SearchGrid(construct_trn_data, keep_old_trn_data,
                 # Summary
                 data = DH.ReadFiles(data_type1=2, data_type2=data_type2)
 
-                if not keep_old_trn_data:
+                if not keep_old_data:
                     DH.InitializeDataFiles(data_type1=3)
                 print("Saving true positive points to FDataFiles")
                 DH.SaveControlledPosPoints(data, data_type2)
@@ -153,7 +151,7 @@ def EvalFcn(samples):
             dict_dep_param = {key: value.real for key, value in zip(dict_dep_param.keys(), dict_dep_param.values())}
             
         
-        """
+        """    
         ########### THDM Specific ##########
         # Boundedness from below
         lam1 = dict_free_param["lam1"]
@@ -195,7 +193,7 @@ def EvalFcn(samples):
         in_param_lists.append(in_param_list)
         free_param_lists.append(free_param_list)
         fixed_param_lists.append(fixed_param_list)
-   
+ 
     return np.array([in_param_lists, free_param_lists, fixed_param_lists], dtype=object)
 
 
@@ -230,9 +228,8 @@ def RunHEPs(param_lists, optimize, num_processes, data_type2, data_type1=1):
 
     # Find an appropriate chunk size. Too large => tqdm bar gets updated too selldomly,
     # too smal => large overhead. 
-    ratio = 20
     # Chunksize = num_samples/(num_processes * ratio)
-    cs = ComputeChunkSize(num_samples, num_processes, ratio)
+    cs = ComputeChunkSize(num_samples, num_processes)
     print("Chunk size: ", cs, ". Note, the progress bar gets updated each time a chunk completes, so be patient or decrease the chunk size")
     with mp.Pool(num_processes) as p:
         list(tqdm(p.imap(ChildProcess, [([*data_types, *param_lists[:,i], *locks, optimize, changed_directory]) for i in range(num_samples)], chunksize=cs), total=num_samples))
@@ -298,25 +295,26 @@ def IdentifyProcessID(process_name):
     return ID
 
 
-def ComputeChunkSize(num_samples, num_processes, ratio):
-    chunksize, extra = divmod(num_samples, num_processes * ratio)
+def ComputeChunkSize(num_samples, num_processes):
+    chunksize, extra = divmod(num_samples, num_processes * cs_ratio)
     if chunksize < 1:
         chunksize = 1
-    #return chunksize
-    return 1
+    if automatic_cs:
+        return chunksize
+    else:
+        return 1
 
 SearchGrid(
-        construct_trn_data=True,
-        keep_old_trn_data=False,    # Only set to True if data files already contain data
-        data_type2='both', # 'collider','cosmic','both'
-        train_network=False,
-        load_network=False,
-        save_network=False,  # only saved network loads for predictions, fix!
-        network_predicts=False,
-        network_controls=False,
-        sampling_method=1,  # REMOVE!
-        optimize=True,
-        num_processes = 5
+        construct_trn_data = construct_training_data,
+        keep_old_data = keep_old_data,
+        data_type2 = constraint_type,
+        train_network= train_ANN,
+        load_network= load_ANN,
+        save_network= save_ANN,
+        network_predicts = ANN_predicts,
+        network_controls = ANN_controls,
+        optimize = optimize_constraints,
+        num_processes = number_of_processes
         )
 
 

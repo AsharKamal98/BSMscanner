@@ -1,13 +1,9 @@
 
 ############################################################### BSM DETAILS ########################################################
 #===================================================================================================================================
-num_h = "2"     # Use citation marks 
-num_hp = "0"    # Use citation marks
-exp_num_training_points = 13 #14 #15 #20=19h #16=2h
-num_training_points = 2**(exp_num_training_points)
-exp_num_pred_points = 10
-num_pred_points = 2**(exp_num_pred_points)
-CT_wait_time = 3.0
+
+num_h = "3"     # Number of neutral (massive) Higgs bosons for HiggsBounds/Signals. Use citation marks.
+num_hp = "1"    # Number of positively (or negatively) charged (massive) Higgs bosons for HiggsBounds/Signals. Use citation marks.
 
 
 #BSM_model = "TSM"
@@ -22,8 +18,8 @@ d_TSM = { \
 
 
 
-BSM_model = "THDM"
-d = { \
+#BSM_model = "THDM"
+d_THDM = { \
 
     "Parameter name": ['M11','M22','M12','lam1','lam2','lam3','lam4','lam5','TanBeta','mC','mA','mh','mH', 'v1', 'v2'], \
 
@@ -47,8 +43,8 @@ d = { \
     }
 
 
-#BSM_model = "SSM"
-d_SSM = { \
+BSM_model = "SSM"
+d = { \
 
     "Parameter name": ['mu2','MS','K1','kappa','lam','K2','lamS','vS','mh','mH'], \
 
@@ -68,9 +64,73 @@ d_SSM = { \
     }
 
 
+########################################################### SCANNER INPUT #######################################################
+#================================================================================================================================
+
+############################## DATA FILES ############################
+# Construct training data for ANN
+construct_training_data = False
+# Keep data stored in files currently.
+keep_old_data = True
+
+############################# ANN STUFF ##############################
+# Train ANN and save ...
+train_ANN = False
+save_ANN = False
+# ... or load ANN saved from before
+load_ANN = True
+
+# Make predictions using trained or loaded ANN
+ANN_predicts = True
+# Run positively predicted points through HEP pacakges and save real positives
+ANN_controls = True
+
+########################### MULTIPROCESSING ##########################
+# Number of processes to use when either constructing training data or
+# using ANN to finding positive points.
+number_of_processes = 80
+
+########################### CONSTRAINTS ##############################
+# Type of constraints to consider when either constructing training data, or 
+# training ANN on stored training data.
+constraint_type = "cosmic"  # "collider", "cosmic" or "both"
+
+# Optimize by only checking cosmic constraints if collider already satisfied
+optimize_constraints = True
+
+# Only used if cosmic constraints evaluated (data_type2='cosmic' or data_type2='both').
+# If cosmic constraints take longer than CT_wait_time, scanner will abort that particular point.
+CT_wait_time = 3.0
+
+#####################  PARAMETER SPACE SAMPLING ######################
+# Only used if training data construction turned on (construct_trn_data=True).
+# Samples 2^(exp_num_training_points) points from parameter space for training data.
+exp_num_training_points = 1
+
+# Only used if trained network makes predictions (network_predicts=True).
+# Samples 2^(exp_num_pred_points) points from parameter space for which trained neural network make predictions on.
+exp_num_pred_points = 15
 
 
-########################################################### PATHS #######################################################
+########################################################## ANN SETTINGS #########################################################
+#================================================================================================================================
+
+network_verbose=False
+network_epochs=500
+under_sample=None
+over_sample=None
+class_weight=1.5
+batch_size=700
+
+
+pvalue_threshold = 0.05
+S_threshold = [-0.02, 0.10]
+T_threshold = [0.03, 0.12]
+U_threshold = [0.01, 0.11]
+omega_exp=-18
+
+
+############################################################### PATHS ###########################################################
 #================================================================================================================================
 
 SPheno_path = "SPheno-4.0.5"
@@ -85,21 +145,12 @@ CT_path = "DRalgo-1.0.2-beta/examples"
 CT_infile_name = "SSM_DRPython" #Remove .py
 CT_class_name = "SSM"
 
-########################################################### ANN SETTINGS #######################################################
+
+############################################################## OTHER ###########################################################
 #================================================================================================================================
-network_verbose=True
-network_epochs=500
-under_sample=0.02
-over_sample=None
-class_weight=1.0
-batch_size=1500
 
-
-pvalue_threshold = 0.05
-S_threshold = [-0.02, 0.10]
-T_threshold = [0.03, 0.12]
-U_threshold = [0.01, 0.11]
-omega_exp=-18
-
+automatic_cs = False    # How many points to give a process at a time, when doing multiprocessing
+                        # Recomendation: automatic_cs = False if cosmic constraints evaluated, else True
+cs_ratio = 20           # Only used if automatic_cs = True. Chunk size = (num_points to scan)/(num_processes * cs_ratio).
 
 

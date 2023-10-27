@@ -7,6 +7,22 @@ import pandas as pd
 import cmath
 
 
+######################################## Scanning and experimental constraint details ###########################################
+#================================================================================================================================
+
+# Samples 2^(exp_num_training_points) points from parameter space for training data
+num_training_points = 2**(exp_num_training_points)
+# Samples 2^(exp_num_pred_points) points from parameter space for which trained neural network make predictions on.
+num_pred_points = 2**(exp_num_pred_points)
+
+pvalue_threshold = 0.05     # p-value for HiggsSignals
+# Intervals for oblique parameters to be accepted.
+# Accepted interval = [X_threshold[0]-X_threshold[1], X_threshold[0]+X_threshold[1]]  
+S_threshold = [-0.02, 0.10]
+T_threshold = [0.03, 0.12]
+U_threshold = [0.01, 0.11]
+
+
 #################################################### Pandas Data Frames #########################################################
 #================================================================================================================================
 
@@ -36,18 +52,16 @@ dep_param_dependicies = []
 for i in range(num_inversions):
     dep_param_names.append(df_dep_param[df_dep_param["Solve order"]==i+1]["Parameter name"].tolist())
     dep_param_dependicies.append(df_dep_param[df_dep_param["Solve order"]==i+1]["Dependence"].tolist())
-#dep_param_names = df_dep_param["Parameter name"].to_numpy()
-#dep_param_dependicies = df_dep_param["Dependence"].to_numpy()
 
 # Combining data frames for fixed variables
 df_fixed_param = pd.concat([df_const_param, df_dep_param], axis=0)
 series_fixed_param = df_fixed_param["Parameter name"]
+num_fixed_param = series_fixed_param.size
 
 # Input parameters to SPheno (LesHouches). Different from free parameters.
 df_in_param = df[~df["LesHouches number"].isna()]
 series_in_param = df_in_param["Parameter name"]
 num_in_param = series_in_param.size
-
 
 
 ########################################################### Paths ###############################################################
@@ -63,4 +77,16 @@ HS_path_S = "../../{}".format(HS_path)
 
 HB_output_filename = "HiggsBounds_results.dat"
 HS_output_filename = "HiggsSignals_results.dat"
+
+
+#################################################### Printing BSM summary #######################################################
+#================================================================================================================================
+print("\n-------------------- BSM THEORY SUMMARY ---------------------")
+print("BSM theory:", BSM_model)
+print("Number of free parameters: ", num_free_param, series_free_param.tolist())
+print("Number of fixed parameters:", num_fixed_param, series_fixed_param.tolist())
+
+
+
+
 

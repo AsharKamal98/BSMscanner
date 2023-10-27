@@ -71,22 +71,28 @@ def PlotTData(data_type2, plot_seperate_constr, fig_name):
         if data_type2 == "collider":
             # 0.0="BG", 1.0="U", 2.0="H", 3.0="STU"
             palette = {"BG" : "black", "U" : "green", "H" : "blue", "STU" : "red"}
-            us = {0.0 : 350, 1.0 : 100, 2.0 : 300, 3.0 : 70}
+            us = None #{0.0 : 350, 1.0 : 100, 2.0 : 300, 3.0 : 70}
             os = None
             data  = NW.Boosting(data, under_sample=us, over_sample=os)
         elif data_type2 == "cosmic":
             # 0.0="BG", 1.0="FOPT", 2.0="S-FOPT", 3.0="D-FOPT"
             palette = {"BG" : "black", "FOPT" : "orange", "S-FOPT" : "dodgerblue", "D-FOPT" : "darkgreen"}
-            data  = NW.Boosting(data, under_sample={0.0 : 10, 4.0 : 10, 5.0 : 10, 6.0 : 10}, over_sample=None)
+            us = None #{0.0 : 10, 4.0 : 10, 5.0 : 10, 6.0 : 10}
+            os = None
+            data  = NW.Boosting(data, under_sample=us, over_sample=os)
         elif data_type2 == "both":
             palette = {"BG" : "black", "U" : "green", "H" : "blue", "STU" : "red", "BG" : "black", "FOPT" : "orange", "S-FOPT" : "dodgerblue", "D-FOPT" : "darkgreen"}
-            data  = NW.Boosting(data, under_sample={0.0 : 10, 1.0 : 10, 2.0 : 10, 3.0 : 10, 4.0 : 10, 5.0 : 10, 6.0 : 10}, over_sample=None)
+            us = None #{0.0 : 10, 1.0 : 10, 2.0 : 10, 3.0 : 10, 4.0 : 10, 5.0 : 10, 6.0 : 10}
+            os = None
+            data  = NW.Boosting(data, under_sample=us, over_sample=os)
 
     else:
         
         dct = {0.0 : "Neg", 1.0 : "Pos"}
         palette={"Neg" : "red", "Pos" : "blue"}
-        data  = NW.Boosting(data, under_sample={0.0 : 10, 1.0 : 10}, over_sample=None)
+        us = None #{0.0 : 10, 1.0 : 10}
+        os = None
+        data  = NW.Boosting(data, under_sample=us, over_sample=os)
 
     df_plot = pd.DataFrame(data, columns = series_free_param.tolist() + ["Constraints"])
     df_plot["Constraints"] = df_plot["Constraints"].map(dct)

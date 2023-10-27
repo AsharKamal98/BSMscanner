@@ -163,8 +163,7 @@ def ReadFiles(data_type1, data_type2, seperate_labels=False, print_summary=True)
 
 def ReadFreeParams(data_type1):
     """ Read free-parameter values from training (T, data_type1=1), prediction (P, data_type1=2)
-    or final (F, data_type1=3) data files.
-    Mainly used by Network.Predict() """
+    or final (F, data_type1=3) data files """
 
     prefix = prefixes[data_type1-1]
     with open("DataFiles/{}DataFile_FreeParam".format(prefix), "r") as f:
@@ -172,10 +171,27 @@ def ReadFreeParams(data_type1):
     if len(l) < 3:
         sys.exit("WARNING: found empty data file when attempting to read {}DataFiles. Exiting.".format(prefix))
 
-    free_param_list = np.array([l[i].split() for i in range(2,len(l))], dtype=object)
-    free_param_list = free_param_list.astype(np.float64)                                
+    free_param_lists = np.array([l[i].split() for i in range(2,len(l))], dtype=object)
+    free_param_lists = free_param_lists.astype(np.float64)                                
 
-    return free_param_list
+    return free_param_lists
+
+def ReadFixedParams(data_type1):
+    """ Read parameter values that are not free from training (T, data_type1=1), prediction (P, data_type1=2)
+    or final (F, data_type1=3) data files.
+    Mainly used for plotting purposes """
+
+    prefix = prefixes[data_type1-1]
+    with open("DataFiles/{}DataFile_FixedParam".format(prefix), "r") as f:
+        l = f.readlines()
+    if len(l) < 3:
+        sys.exit("WARNING: found empty data file when attempting to read {}DataFiles. Exiting.".format(prefix))
+
+    fixed_param_lists = np.array([l[i].split() for i in range(2,len(l))], dtype=object)
+    fixed_param_lists = fixed_param_lists.astype(np.float64)
+
+    return fixed_param_lists
+
 
 
 

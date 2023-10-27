@@ -89,7 +89,7 @@ def Train(model, X_trn, y_trn, X_val, y_val):
     return history.history, model
 
 
-def PlotMetric(history,y_trn,y_val):
+def PrintMetric(history,y_trn,y_val, plot_metric):
     
     ANN_path = "SavedANNs/{}-ANN".format(BSM_model)
     keys = [item for item in history.keys()]
@@ -144,54 +144,49 @@ def PlotMetric(history,y_trn,y_val):
     print("Exhaustiveness", round(avg_Exhaustiveness[-1], 4), "       Val Exhaustiveness", round(avg_val_Exhaustiveness[-1], 4))
 
 
-    print("\nMaking plots to visualize ANN training ...") 
-    plt.plot(np.arange(num_epochs-5), (history)['loss'][5:], 'b', label="loss")
-    plt.plot(np.arange(num_epochs-5), (history)['val_loss'][5:], 'r', label="val loss")
-    plt.legend()
-    #plt.show()
-    plt.savefig('{}/LossPlot.pdf'.format(ANN_path))
-    plt.figure()
+    if plot_metric:
+        print("\nMaking plots to visualize ANN training ...") 
+        plt.plot(np.arange(num_epochs-5), (history)['loss'][5:], 'b', label="loss")
+        plt.plot(np.arange(num_epochs-5), (history)['val_loss'][5:], 'r', label="val loss")
+        plt.legend()
+        plt.savefig('{}/LossPlot.pdf'.format(ANN_path))
+        plt.figure()
 
-    plt.plot(np.arange(num_epochs), history[keys[1]], 'b', label="accuracy")
-    plt.plot(np.arange(num_epochs), history[keys[5]], 'r', label="val accuracy")
-    plt.ylim(0,1.1)
-    plt.legend()
-    #plt.show()
-    plt.savefig('{}/AccuracyPlot.pdf'.format(ANN_path))
-    plt.figure()
+        plt.plot(np.arange(num_epochs), history[keys[1]], 'b', label="accuracy")
+        plt.plot(np.arange(num_epochs), history[keys[5]], 'r', label="val accuracy")
+        plt.ylim(0,1.1)
+        plt.legend()
+        plt.savefig('{}/AccuracyPlot.pdf'.format(ANN_path))
+        plt.figure()
 
-    plt.plot(Elist, avg_Efficiency, linestyle=':', color='blue', label="Efficiency")
-    plt.plot(Elist, avg_val_Efficiency, linestyle=':', color='red', label="Val Efficiency")
-    plt.ylim(-0.001,0.08)
-    plt.legend()
-    #plt.show()
-    plt.savefig('{}/EfficiencyPlot.pdf'.format(ANN_path))
-    plt.figure()
+        plt.plot(Elist, avg_Efficiency, linestyle=':', color='blue', label="Efficiency")
+        plt.plot(Elist, avg_val_Efficiency, linestyle=':', color='red', label="Val Efficiency")
+        plt.ylim(-0.001,1.0)
+        plt.legend()
+        plt.savefig('{}/EfficiencyPlot.pdf'.format(ANN_path))
+        plt.figure()
 
-    plt.plot(Elist, avg_Exhaustiveness, linestyle=':', color='blue', label="Exhaustiveness")
-    plt.plot(Elist, avg_val_Exhaustiveness, linestyle=':', color='red', label="Val Exhaustiveness")
-    plt.ylim(-0.02,1.1)
-    plt.legend()
-    #plt.show()
-    plt.savefig('{}/ExhaustivenessPlot.pdf'.format(ANN_path))
-    plt.figure()
+        plt.plot(Elist, avg_Exhaustiveness, linestyle=':', color='blue', label="Exhaustiveness")
+        plt.plot(Elist, avg_val_Exhaustiveness, linestyle=':', color='red', label="Val Exhaustiveness")
+        plt.ylim(-0.02,1.1)
+        plt.legend()
+        plt.savefig('{}/ExhaustivenessPlot.pdf'.format(ANN_path))
+        plt.figure()
 
-    plt.plot(Elist, avg_TP, linestyle=':', color='blue', label="True Positives")
-    plt.plot(Elist, avg_val_TP, linestyle=':', color='red', label="Val True Positives")
-    plt.axhline(y = np.sum(y_trn), color = 'blue')
-    plt.axhline(y = np.sum(y_val), color = 'red')
-    plt.legend()
-    #plt.show()
-    plt.savefig('{}/TruePosPlot.pdf'.format(ANN_path))
-    plt.figure()
+        plt.plot(Elist, avg_TP, linestyle=':', color='blue', label="True Positives")
+        plt.plot(Elist, avg_val_TP, linestyle=':', color='red', label="Val True Positives")
+        plt.axhline(y = np.sum(y_trn), color = 'blue')
+        plt.axhline(y = np.sum(y_val), color = 'red')
+        plt.legend()
+        plt.savefig('{}/TruePosPlot.pdf'.format(ANN_path))
+        plt.figure()
 
-    plt.plot(Elist, avg_FP, linestyle=':', color='blue', label="False Positives")
-    plt.plot(Elist, avg_val_FP, linestyle=':', color='red', label="Val False Positives")
-    plt.legend()
-    #plt.show()
-    plt.savefig('{}/FalsePosPlot.pdf'.format(ANN_path))
+        plt.plot(Elist, avg_FP, linestyle=':', color='blue', label="False Positives")
+        plt.plot(Elist, avg_val_FP, linestyle=':', color='red', label="Val False Positives")
+        plt.legend()
+        plt.savefig('{}/FalsePosPlot.pdf'.format(ANN_path))
 
-    print("Done. See {} directory".format(ANN_path))
+        print("Done. See {} directory".format(ANN_path))
     
     
     return None
@@ -211,6 +206,7 @@ def NormalizeInput(X, new_scheme=True, mean=None, std=None):
 def TrainANN(data_type2, under_sample, over_sample, load_network, train_network, save_network):
     ANN_path = "SavedANNs/{}-ANN".format(BSM_model)
     if load_network: 
+        print_metric = False
         print("Loading trained neural network")
         model = tf.keras.models.load_model("{}/Model".format(ANN_path))
         with open("{}/Model_History.pkl".format(ANN_path), "rb") as f:
@@ -240,6 +236,7 @@ def TrainANN(data_type2, under_sample, over_sample, load_network, train_network,
 
     #print("\nSize of batch is", len(X_boosted_trn))
     if train_network:
+        print_metric = True
         print("Training network...")
         history, model = Train(model, X_boosted_trn, y_boosted_trn, X_val, y_val)
         print("Network trained!")
@@ -255,14 +252,10 @@ def TrainANN(data_type2, under_sample, over_sample, load_network, train_network,
             np.save("{}/NormVariables.npy".format(ANN_path), norm_var)
             print("Saved network, its history and training/validation sets in the directory {}".format(ANN_path))
 
-        #y = model.predict(X_val)
-        #y = [1 if item > 0.5 else 0 for item in y]
-        #print("pos points", np.sum(y), "out of", len(y))
 
-    print("The baseline accuracy is", np.sum(y_val)/y_val.shape[0])
-    #print("Number of points in validation set is", y_val.shape[0])
+    print("The baseline (random search) accuracyi based on the validation set is", np.sum(y_val)/y_val.shape[0])
 
-    PlotMetric(history, y_boosted_trn, y_val)
+    PrintMetric(history, y_boosted_trn, y_val, print_metric)
     #if not load_network:
         #PlotData(X_boosted_trn, y_boosted_trn, "Trained_Model/TrnDataPlot", plot_dist=False, read_data=read_data)
         #PlotData(X_val, y_val, "Trained_Model/ValDataPlot", plot_dist=False, read_data=read_data)

@@ -154,7 +154,7 @@ def AnalysisCosmic(in_param_list):
     return cosmic_output
 
 
-def Sampling(exp_num_points, sampling_method):
+def Sampling(exp_num_points):
     """
     Sample parameter space spanned by the free parameters using Sobol sequences.
     Two sampling methods.
@@ -162,22 +162,11 @@ def Sampling(exp_num_points, sampling_method):
     -----
         int exp_num_points: sample 2**(exp_num_points) in parameter space.
         int sampling_method: 1 will perform a new sampling.
-                             2 will take samples written in  a data file. Useful
-                             if several processes are gathering data and sampling
-                             is pre-distributed for each process.
     """
 
-    if sampling_method==1:
-        sampler = qmc.Sobol(d=num_free_param)
-        sample = sampler.random_base2(m=exp_num_points)
-        input_samples = qmc.scale(sample, free_param_ranges[:,0], free_param_ranges[:,1])
-    elif sampling_method==2:
-        with open("InDataFile", "r") as f:
-            l = f.readlines()
-        input_samples = np.array([l[i].split() for i in range(2, len(l))], dtype=object)
-        input_samples = input_samples.astype(np.float64)
-    else:
-        print("Raise error")
+    sampler = qmc.Sobol(d=num_free_param)
+    sample = sampler.random_base2(m=exp_num_points)
+    input_samples = qmc.scale(sample, free_param_ranges[:,0], free_param_ranges[:,1])
     return input_samples
 
 

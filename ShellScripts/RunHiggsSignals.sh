@@ -1,12 +1,7 @@
 #!/bin/bash
 
-#cd $1
-#prefix='../../SPheno-4.0.5/'
-
 prefix='./'
 
-#nH=3
-#nHplus=1
 
 nH=$2
 nHplus=$3

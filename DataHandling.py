@@ -90,8 +90,7 @@ def SaveControlledPosPoints(data, data_type2):
     # Find indicies of positive points in data
     labels = np.array(data[:,-1])
     pos_points_indicies = np.where(labels==1)[0]
-    pos_points_indicies = np.insert(pos_points_indicies, 0, [-2,-1]) #Insert two zeros at beginning
-
+    #pos_points_indicies = np.insert(pos_points_indicies, 0, [-2,-1]) #Insert two zeros at beginning
     # Save free and fixed parameter values corresponding to positive points in FDataFiles
     with open("DataFiles/PDataFile_FreeParam", "r") as f:
         l = np.array(f.readlines())
@@ -113,7 +112,6 @@ def SaveControlledPosPoints(data, data_type2):
             l = np.array(f.readlines())
         with open("DataFiles/FDataFile_Labels_GW", "a") as f:
             f.writelines(l[pos_points_indicies+2])
-
 
 
 

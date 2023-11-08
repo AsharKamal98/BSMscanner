@@ -57,9 +57,17 @@ mpl.rcParams["figure.figsize"] = [8.5, 5.5]
 
 
 
-def PlotTData(data_type2, plot_seperate_constr, fig_name):
+def PlotTData(data_type2, fig_name):
     """
-    Add info
+    Plots training data stored in DataFiles/TDataFiles.
+    INPUT
+    -----
+    data_type2: string
+        What constraints to read from training data. "Both", "Collider" or "Cosmic"
+    plot_seperate_constr: boolean
+        True will plot positive and negative points, while False will plot points satisfying each constraints seperately
+    fig_name: string
+        Name of figure to produce in the Figures directory
     """
     
     print("Creating Plot: {}".format(fig_name), "See Figures directory")
@@ -69,30 +77,21 @@ def PlotTData(data_type2, plot_seperate_constr, fig_name):
     if plot_seperate_constr:
         dct = {0.0 : "BG", 1.0 : "U", 2.0 : "H", 3.0 : "STU", 4.0 : "FOPT", 5.0 : "S-FOPT", 6.0 : "D-FOPT"}
         if data_type2 == "collider":
-            # 0.0="BG", 1.0="U", 2.0="H", 3.0="STU"
             palette = {"BG" : "black", "U" : "green", "H" : "blue", "STU" : "red"}
-            us = None #{0.0 : 350, 1.0 : 100, 2.0 : 300, 3.0 : 70}
-            os = None
-            data  = NW.Boosting(data, under_sample=us, over_sample=os)
         elif data_type2 == "cosmic":
-            # 0.0="BG", 1.0="FOPT", 2.0="S-FOPT", 3.0="D-FOPT"
             palette = {"BG" : "black", "FOPT" : "orange", "S-FOPT" : "dodgerblue", "D-FOPT" : "darkgreen"}
-            us = None #{0.0 : 10, 4.0 : 10, 5.0 : 10, 6.0 : 10}
-            os = None
-            data  = NW.Boosting(data, under_sample=us, over_sample=os)
         elif data_type2 == "both":
             palette = {"BG" : "black", "U" : "green", "H" : "blue", "STU" : "red", "BG" : "black", "FOPT" : "orange", "S-FOPT" : "dodgerblue", "D-FOPT" : "darkgreen"}
-            us = None #{0.0 : 10, 1.0 : 10, 2.0 : 10, 3.0 : 10, 4.0 : 10, 5.0 : 10, 6.0 : 10}
-            os = None
-            data  = NW.Boosting(data, under_sample=us, over_sample=os)
-
     else:
-        
         dct = {0.0 : "Neg", 1.0 : "Pos"}
         palette={"Neg" : "red", "Pos" : "blue"}
-        us = None #{0.0 : 10, 1.0 : 10}
-        os = None
-        data  = NW.Boosting(data, under_sample=us, over_sample=os)
+
+    if plot_sampling!=None:
+        try:
+            data  = NW.Boosting(data, under_sample=plot_sampling, over_sample=None)
+        except Exception as e:
+            print("WARNING: Training data sampling for the plotting did not work as expected:", e)
+            print("Plotting training data without sampling. Control the plot_sampling variable in UserInput if you want to include sampling")
 
     df_plot = pd.DataFrame(data, columns = series_free_param.tolist() + ["Constraints"])
     df_plot["Constraints"] = df_plot["Constraints"].map(dct)
@@ -102,13 +101,19 @@ def PlotTData(data_type2, plot_seperate_constr, fig_name):
 
     subprocess.run(["mkdir", "-p", "Figures"])
     plt.savefig('Figures/{}'.format(fig_name))
-
+    plt.figure()
 
 def PlotFData(data_type2, fig_name):
     """
-    Add info
+    Plots points satifying all constraints being considered, collected by the ANN. 
+    Data is taken from DataFiles/FDataFiles.
+    INPUT
+    -----
+    data_type2: string
+        What constraints to read from training data. "Both", "Collider" or "Cosmic"
+    fig_name: string
+        Name of figure to produce in the Figures directory
     """
-    
     print("Creating Plot: {}".format(fig_name), "See Figures directory")
 
     data = DH.ReadFiles(data_type1=3, data_type2=data_type2, seperate_labels=False, print_summary=False)
@@ -124,7 +129,7 @@ def PlotFData(data_type2, fig_name):
 
     subprocess.run(["mkdir", "-p", "Figures"])
     plt.savefig('Figures/{}'.format(fig_name))
-
+    plt.figure()
 
 
 

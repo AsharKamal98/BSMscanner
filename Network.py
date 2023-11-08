@@ -80,7 +80,8 @@ def Train(model, X_trn, y_trn, X_val, y_val):
     history = model.fit(
         X_trn,
         y_trn,
-        batch_size=batch_size,
+        #batch_size=batch_size,
+        steps_per_epoch=steps_per_epoch,
         epochs=network_epochs,
         validation_data = (X_val, y_val),
         class_weight = {0: 1.0, 1: class_weight},

@@ -5,17 +5,13 @@ import DataHandling as DH
 import sys
 
 import importlib
-sys.path.insert(0, CT_path)
-imported_module = importlib.import_module(CT_infile_name)
-CT_class = getattr(imported_module, CT_class_name, None)
-nVevs = getattr(imported_module, "nVevs", None)
-#from imported_module import nVevs
-
-#from LS_TColor_DRPython import LS_TColor, nVevs
-#from LS_TColor_DRPython import CT_class_name , nVevs
-#CT_infile_name
-#from THDM_DRPython  import THDM, nVevs
-from gwFuns import *
+# Import cosmic libraries if cosmic analysis will be run
+if constraint_type=="cosmic" or constraint_type=="both":
+    sys.path.insert(0, CT_path)
+    imported_module = importlib.import_module(CT_infile_name)
+    CT_class = getattr(imported_module, CT_class_name, None)
+    nVevs = getattr(imported_module, "nVevs", None)
+    from gwFuns import *
 
 # Import libraries
 import numpy as np
@@ -38,9 +34,10 @@ def AnalysisCollider(in_param_list, optimize):  # data_type1 not needed
         l = f.readlines()
     MINPARindex = [idx for idx, s in enumerate(l) if 'Block MINPAR' and '# Input' in s][0]
 
-    # Define input parameters in LesHouches file
+    # Define input parameters in LesHouches file (LesHouches number, parameter value, parameter name)
     for i in range(num_in_param):
-        l[MINPARindex+1+i] = " {}   {}     # {}\n".format(i+1, in_param_list[i], l[MINPARindex+1+i].split()[-1])
+        #l[MINPARindex+1+i] = " {}   {}     # {}\n".format(leshouches_num, in_param_list[i], l[MINPARindex+1+i].split()[-1])
+        l[MINPARindex+1+i] = " {}   {}     # {}\n".format(int(leshouches_list[i]), in_param_list[i], series_in_param[i])
 
     with open(LesHouches_filename, "w") as f:
         f.writelines(l)
@@ -68,8 +65,7 @@ def AnalysisCollider(in_param_list, optimize):  # data_type1 not needed
         
         sys.exit("Exiting") # Fix, does not work properly with multiprocessing!
 
-    # Write label into data file
-    #DH.WriteLabelsCol(successful_run, spheno_output2, spheno_output3, higgsbounds_output, higgssignals_output, data_type1)
+    # Place collider output into one list
     collider_output = [successful_run, spheno_output2, spheno_output3, higgsbounds_output, higgssignals_output]
     
     # Check label. Only needed if we want to optimize code
@@ -82,10 +78,8 @@ def AnalysisCollider(in_param_list, optimize):  # data_type1 not needed
 
 
 def AnalysisCosmic(in_param_list):
-    #print("RUNNING COSMIC ANALYSIS --------------------------------------------------------------------------------------------")
-    #print(in_param_list)
-    rand_num = random.randint(1,10000)
-    print("Running cosmic analysis {}".format(rand_num))
+    #rand_num = random.randint(1,10000)
+    #print("Running cosmic analysis {}".format(rand_num))
 
     alphaa,betaa,fpeak,ompeak,STTn,STTp,dSTdTTn,dSTdTTp,Tc,Tn,Tp,low_vev,high_vev,dV,dVdT,action = 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
     try:
@@ -117,7 +111,7 @@ def AnalysisCosmic(in_param_list):
             if found_true_FOPT:
                 alpha_index = alpha_list.argmax() 
                 try:
-                    print("Running GW funcs code")
+                    #print("Running GW funcs code")
                     with open(os.devnull, 'w') as null_file:
                         with contextlib.redirect_stdout(null_file), contextlib.redirect_stderr(null_file):
                             gw_dict = gw_pars(m, transId=alpha_index)
@@ -132,8 +126,8 @@ def AnalysisCosmic(in_param_list):
                     print("Found FOPT, GW Func code finished successfully!")
 
                 except Exception as e:
-                    print("GWFUNC FAILED ON A REAL FOPT")
-                    print(e)
+                    #print("GWFUNC FAILED ON A REAL FOPT")
+                    #print(e)
                     transition_order = 99   #Found FOPT but GW Func calculation failed 
 
             else:
@@ -143,25 +137,23 @@ def AnalysisCosmic(in_param_list):
             transition_order = 0    #No PTs found
 
     except Exception as e:
-        print("RUNNING FINAL EXCEPTION. COSMIC ANALYSIS WAS (MANUALLY) INTERRUPTED OR CRASHED MYSTEROUSLY.")
-        print(e)
+        #print("RUNNING FINAL EXCEPTION. COSMIC ANALYSIS WAS (MANUALLY) INTERRUPTED OR CRASHED MYSTEROUSLY.")
+        #print(e)
         transition_order = -1     #Cosmic analysis was (manually) interrupted or CosmoTrnasitions crashed mysteriously
     
 
     cosmic_output = [transition_order, alphaa, betaa, fpeak, ompeak, STTn, STTp, dSTdTTn, dSTdTTp, Tc, Tn, Tp, low_vev, high_vev, dV, dVdT, action]
 
-    print("Cosmic analysis {} done".format(rand_num))
+    #print("Cosmic analysis {} done".format(rand_num))
     return cosmic_output
 
 
 def Sampling(exp_num_points):
     """
     Sample parameter space spanned by the free parameters using Sobol sequences.
-    Two sampling methods.
     INPUT:
     -----
-        int exp_num_points: sample 2**(exp_num_points) in parameter space.
-        int sampling_method: 1 will perform a new sampling.
+        int exp_num_points: sample 2**(exp_num_points) points.
     """
 
     sampler = qmc.Sobol(d=num_free_param)
@@ -199,7 +191,7 @@ def ReadHiggsBounds():
     with open(HB_output_filename) as f:
         l = f.readlines()
     index1 = [idx for idx, s in enumerate(l) if '#cols' in s][0]
-    index2 = l[index1].split().index("HBresult")
+    index2 = l[index1].split().index("HBresult")    # Can be made faster!
     higgsbounds_output = l[index1+2].split()[index2-1]
     return higgsbounds_output
 
@@ -213,24 +205,12 @@ def ReadHiggsSignals():
     index1 = [idx for idx, s in enumerate(l) if '#cols:' in s][0]
     index2 = l[index1].split().index("csq(mu)")
     higgssignals_output = [l[index1+2].split()[index2-1+i] for i in range(2)]
-    higgssignals_output.append(l[index1+2].split()[11])
+    higgssignals_output.append(l[index1+2].split()[-1])
     return higgssignals_output
 
 def RunCosmoTransitions(in_param_list):
-    yt = 1.07
-    gwsq = pow(0.65100, 2)
-    gYsq = pow(0.357254, 2)
-    gssq = pow(1.2104, 2)
-
-    ###### TC Specific ######
-    #v = 246.220569 
-    #mH = -in_param_list[8] * v**2 #Fix!
-    #params_4D_ref = np.array([gwsq, gYsq, gssq, in_param_list[9], in_param_list[10], in_param_list[4], in_param_list[5], in_param_list[6], in_param_list[7], in_param_list[8], in_param_list[0], in_param_list[1], in_param_list[2], in_param_list[3], yt, mH, in_param_list[12], in_param_list[11]])
-    ##### THDM Specific #####
-    #params_4D_ref = np.array([gwsq, gYsq, gssq, in_param_list[3], in_param_list[4], in_param_list[5], in_param_list[6], in_param_list[7], yt, in_param_list[0], in_param_list[1], in_param_list[2]])
-    ##### SSM Specific #####
-    params_4D_ref = np.array([gwsq, gYsq, gssq, in_param_list[5], in_param_list[6], in_param_list[4], in_param_list[2], in_param_list[3], yt, in_param_list[1], in_param_list[0]])
-
+    
+    params_4D_ref = CT_InputFcn(in_param_list)
 
     m = CT_class(Ndim = nVevs, mu4DMinLow = 246, mu4DMaxHigh = 10000, mu4DRef = 246.,
          params4DRef = params_4D_ref, highTOptions = {},
@@ -240,11 +220,12 @@ def RunCosmoTransitions(in_param_list):
     m.findAllTransitions()
     m.pruneTransitions()
     m.augmentTransitionDictionary()
+    
     return m
 
 
 def TimeoutHandler(a,b):
-    print("Signal recieved")
+    """ Raises exception when called """
     raise Exception("FUBAR")
 
 

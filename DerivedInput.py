@@ -5,7 +5,17 @@ from UserInput import *
 import numpy as np
 import pandas as pd
 import cmath
+import sys
 
+
+############################################## Checking if all variables defined ################################################
+#================================================================================================================================
+
+if "BSM_model" not in globals():
+    sys.exit("\nERROR: BSM theory name not defined. Define BSM_model in UserInput\n")
+if "d" not in globals():
+    sys.exit("\nERROR: BSM theory not defined. Define dictionary d in UserInput\n") 
+   
 
 ######################################## Scanning and experimental constraint details ###########################################
 #================================================================================================================================
@@ -61,22 +71,24 @@ num_fixed_param = series_fixed_param.size
 # Input parameters to SPheno (LesHouches). Different from free parameters.
 df_in_param = df[~df["LesHouches number"].isna()]
 series_in_param = df_in_param["Parameter name"]
+leshouches_list = df_in_param["LesHouches number"].tolist()
 num_in_param = series_in_param.size
 
 
 ########################################################### Paths ###############################################################
 #================================================================================================================================
 
-LesHouches_filename = "LesHouches.in.{}".format(BSM_model)
-SPheno_spc_filename = "SPheno.spc.{}".format(BSM_model) 
+if constraint_type == "collider" or constraint_type == "both":
+    LesHouches_filename = "LesHouches.in.{}".format(BSM_model)
+    SPheno_spc_filename = "SPheno.spc.{}".format(BSM_model) 
 
-SPheno_path_S = "../../{}".format(SPheno_path)
-HB_path_S = "../../{}".format(HB_path)
-HS_path_S = "../../{}".format(HS_path)
+    SPheno_path_S = "../../{}".format(SPheno_path)
+    HB_path_S = "../../{}".format(HB_path)
+    HS_path_S = "../../{}".format(HS_path)
 
 
-HB_output_filename = "HiggsBounds_results.dat"
-HS_output_filename = "HiggsSignals_results.dat"
+    HB_output_filename = "HiggsBounds_results.dat"
+    HS_output_filename = "HiggsSignals_results.dat"
 
 
 #################################################### Printing BSM summary #######################################################

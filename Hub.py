@@ -24,31 +24,38 @@ import time
 import random
 
 
-def SearchGrid(construct_trn_data, keep_old_data,
+def Main(construct_trn_data, keep_old_data,
                 data_type2, train_network, load_network, save_network,
                 network_predicts, network_controls, optimize, num_processes):
 
     """
     Inputs
     ------
-    construct_collider_data: boolean
-        If collider data should be constructed.
-    construct_cosmic_data: boolean
-        If cosmic data should be constructed.
-    keep_old_trn_data: boolean
-        If old data in data files should be kept.
-    read_constr: string ('both', 'collider' or 'cosmic')
-        What statistics should be printed after data has been constructed.
+    construct_trn_data: boolean
+        If training data should be constructed.
+    keep_old_data: boolean
+        If old training data / final data should be kept.
+    data_type2: string ('both', 'collider' or 'cosmic')
+        What constraints to check when running HEP packages
     train_network: boolean
-        If network should be trained or not
+        If a new network should be trained
+    save_network: boolean
+        If trained network should be saved for future use
+    load_network: boolean
+        If an existing trained network should be loaded
     network_predicts: boolean
-        If network should predict good points after it has trained
+        If network should predict good points after it has trained/loaded
+    network_controls: boolean
+        If the positively predicted points above should be controlled by the HEP packages
     optimize: boolean
         Used if construct_collider_data==True and construct_cosmic_data==True. Cosmic constraints
         for a point will only be checked if the point already satisfies collider constraints,
         to save time
+    num_processes: int
+        How many concurrent processes to run for scanner (either for training data construction or
+        controlling positively predicted points)
     """
-   
+
     #------------CONSTRUCT COLLIDER TRAINING DATA FOR NETWORK----------------
     if construct_trn_data:
         print("\n---------------- TRAINING DATA CONSTRUCTION -----------------")
@@ -58,7 +65,6 @@ def SearchGrid(construct_trn_data, keep_old_data,
 
         print("\nPerforming parameter space sampling ...")
         training_samples = DC.Sampling(exp_num_training_points)
-        #in_param_lists, free_param_lists, fixed_param_lists = EvalFcn(training_samples)
         param_lists = EvalFcn(training_samples)
         print("Done.")
        
@@ -71,7 +77,7 @@ def SearchGrid(construct_trn_data, keep_old_data,
 
         # Print summary of training data and construct plots
         DH.ReadFiles(data_type1=1, data_type2=data_type2)
-        PS.PlotTData(data_type2=data_type2, plot_seperate_constr=False, fig_name="TrainingDataPlot.png")
+        PS.PlotTData(data_type2=data_type2, fig_name="TrainingDataPlot.png")
 
     #----------------------------TRAIN/LOAD NETWORK-------------------------------
     if train_network and load_network:
@@ -101,9 +107,6 @@ def SearchGrid(construct_trn_data, keep_old_data,
             if network_controls:
                 DH.InitializeDataFiles(data_type1=2)
 
-                #in_param_lists = in_param_lists[pos_prediction_indicies]
-                #free_param_lists = free_param_lists[pos_prediction_indicies]
-                #fixed_param_lists = fixed_param_lists[pos_prediction_indicies]
                 param_lists = param_lists[:,pos_prediction_indicies]
 
                 print("\nAnalyzing positively predicted points")
@@ -126,11 +129,18 @@ def SearchGrid(construct_trn_data, keep_old_data,
     if network_controls and not network_predicts:
         sys.exit("Neural network cannot control positiviely predicted points unless the ANN model actually makes predictions first. Set network_predicts to True")
    
-    print("\n")
+    print("\nBSMscanner done!\n")
     return
 
 
 def EvalFcn(samples):
+    """ Applies additional constraints to sampled parameter space, e.g. real couplings. For boundedness from below, perturbativity etc.
+    user must define them directly in this function.
+    INPUT
+    .....
+    samples: 2D array of size: number of points sampled X number of free parameters.
+    """
+
     in_param_lists = []
     free_param_lists = []
     fixed_param_lists = []
@@ -154,11 +164,7 @@ def EvalFcn(samples):
         """    
         ########### THDM Specific ##########
         # Boundedness from below
-        lam1 = dict_free_param["lam1"]
-        lam2 = dict_free_param["lam2"]
-        lam3 = dict_dep_param["lam3"]
-        lam4 = dict_dep_param["lam4"]
-        lam5 = dict_dep_param["lam5"]
+        lam1,lam2,lam3,lam4,lam5 = dict_free_param["lam1"], dict_free_param["lam2"], dict_free_param["lam3"], dict_free_param["lam4"], dict_free_param["lam5"]
         prod = -cmath.sqrt(lam1*lam2)
         if lam1 < 0 or lam2 < 0 or lam3 < prod or lam3+lam4-lam5 < prod:
             continue
@@ -172,14 +178,6 @@ def EvalFcn(samples):
         ########### TC Specific ############
         lam8, mT, mS = dict_dep_param["lam8"], dict_dep_param["mT"], dict_dep_param["mS"]
         if mT<0 or mS<0:
-            continue
-        ######################################
-        """
-
-        """
-        ########### TC Specific ############
-        lam, lamS = dict_free_param["lam"], dict_free_param["lamS"]
-        if lam < 0 or lamS < 0:
             continue
         ######################################
         """
@@ -198,6 +196,8 @@ def EvalFcn(samples):
 
 
 def RunHEPs(param_lists, optimize, num_processes, data_type2, data_type1=1):
+    """ Run HEP packages. Each concurrent process runs in its own private directory.
+    Concurrent processes run via the ChildProcess function. """
 
     #-------- INITIALIZING SIMULATION DIRECTORIES ------------------------------
     # Create a work directory for each child (concurrent) process
@@ -290,12 +290,16 @@ def ChildProcess(args):
 
 
 def IdentifyProcessID(process_name):
+    """ Identify id of child process. Used to enter correct directory """
     index = process_name.index("-")
     ID = int(process_name[index+1:]) - 1
     return ID
 
 
 def ComputeChunkSize(num_samples, num_processes):
+    """ Number of points to hand each concurrent process at a time. Chunk size greater than
+    1 reduces overhead """
+
     chunksize, extra = divmod(num_samples, num_processes * cs_ratio)
     if chunksize < 1:
         chunksize = 1
@@ -304,7 +308,7 @@ def ComputeChunkSize(num_samples, num_processes):
     else:
         return 1
 
-SearchGrid(
+Main(
         construct_trn_data = construct_training_data,
         keep_old_data = keep_old_data,
         data_type2 = constraint_type,

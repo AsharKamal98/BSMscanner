@@ -8,23 +8,28 @@ For the BSM theory toy models available in the code, the following were also use
 ## 6. DRalgo for construction of finite-temperature potantial (https://github.com/DR-algo/DRalgo)
 ## 7. export code from DRalgo to CosmoTransitions written by Mårten Bertenstam (scirpt not publicly available)
 
+# Pre-defined toy models:
+Three toy models (THDM, SM+Singlet, SM+Singlet+Triplet) are already defined in the code. The relevant files to these models using the HEP packages can be found in the HEPfiles directory. The THDM is implemented for the collider constraints, SM+Singlet for cosmic constraints and SM+Singlet+Triplet for collider+cosmic constraints. 
+
 # HEP packages and other:
 ## 1. For collider constraints, install and compile collider (HEP) packages
 - Install SPheno, HiggsBounds and HiggsSignals. The packages are available in the links provided above, but specific versions can also be found in the HEPfiles directory.
-- Implement and compile your BSM model in SPheno (e.g. using SARAH). Place the corresponding LesHouches file into the SPheno directory.
+- Implement and compile your BSM model in SPheno (e.g. using SARAH).
+- If you want to use one of the pre-defined toy models, the LesHouches input files and SPheno executable files for each model are found in the HEPfiles/{ModelName} directory. Place the LesHouches file in the SPheno directory, and the executable SPheno{ModelName} in the SPheno/bin directory. 
 - Compile HiggsBounds and HiggsSignals.
 - Make sure that each package runs using your BSM theory for a specific parameter space point.
 
 ## 2. For cosmic constraints, install and compile cosmic (HEP) packages
 - Install CosmoTransitions. The package is available in the links provided above, but a specific version can also be found in the HEPfiles directory.
 - Implement the finite-temperature potential into CosmoTransitions (e.g. using DRalgo and Mårtens code).
+- If you want to use one of the pre-defined toy models, you can find the CosmoTransition files for each model is found in the HEPfiles/{ModelName} directory (the THDM CosmoTrnasition file is a bit buggy, but still runs).
 - Make sure CosmoTransitions runs for a specific parameter space point.
 
-## 3. Place the CosmoTransitions Python file where you BSM theory is defined in the example directoy of DRalgo.
+## 3. Place the CosmoTransitions Python file in the example directoy of DRalgo.
 
-## 4. Place the gwFuns.py written by Antonio in the DRalgo examples directory.
+## 4. Place the gwFuns.py (found in HEPfiles) written by Antonio in the DRalgo examples directory.
 
-## 5. In the UserInput.py file, add the paths to the HEP packages used, as well as the CosmoTransitions Python script. 
+## 5. In the UserInput.py file, add the paths to the HEP packages and files.
 
 
 
@@ -40,27 +45,27 @@ For the BSM theory toy models available in the code, the following were also use
 
 # Constructing training data via random scan
 ## 1. Set construct_training_data=True. The training data is saved to DataFiles/TDataFiles and a summary of the number of points satisfying each constraint is printed. If you have old data in the TDataFiles (belonging to the same BSM theory!), which you want to save, set keep_old_data=True.
-## 2. Intersections of the n-dimensional parameter space containing these points will automatically be plotted and saved in the Figures directory, where n is the number of free parameters for the BSM theory. One can choose to plot either negative/positive points, or points satisfying each constraint seperately. This is controlled by the plot_seperate_constraints input.
+## 2. Intersections of the n-dimensional parameter space containing these points will automatically be plotted and saved in the Figures directory, where n is the number of free parameters for the BSM theory. One can choose to plot either negative/positive points, or points satisfying each constraint seperately. This is controlled by the plot_seperate_constr input.
 ## 3. The number of points scanned is controlled by the exp_num_training_points input. 
-## 4. For multiprocessing, number of concurrent processes to run is chosen by number_of_processes. Used when scanning sampled points.
+## 4. For multiprocessing, number of concurrent processes to run is chosen by number_of_processes. Used when analyzing randomly sampled points.
 
 # Applying deep learning
 ## 1. To train a neural network using the data stored in DataFiles/TDataFiles, set train_ANN=True. Most hyperparameters (ANN parameters) can be found under the ANN Settings section. To change number of hidden layers and nodes, activation functions, optimizer etc., one must go the the Network.py file directly where the ANN is defined, under the ConstructModel function. The trained ANN will be saved if save_ANN=True, in the SavedANNs/BSM_model-ANN directory, which means one can save one ANN model per BSM theory. 
 ## 2. If a previously trained and saved ANN exists, it can be loaded by load_ANN=True. The ANN belonging to the given BSM theory will be loaded. 
-## 3. If ANN_predicts=True, a (second larger) parameter space sampling is performed. The number of points is controlled by exp_num_pred_points. The ANN will then predict which points it believes to be positve (i.e satisfy the constraints it has been trained on). 
-## 4. ANN_controls will make the ANN scan through the positively precited points. The true positive points are are saved to DataFiles/FDataFiles and a summary of the number of points is printed. If you have old data in the FDataFiles (belonging to the same BSM theory!), which you want to save, set keep_old_data=True. 
-## 5. For multiprocessing, number of concurrent processes to run is chosen by number_of_processes. Used when scanning positively predicted points.
+## 3. If ANN_predicts=True, a (second preferably larger) parameter space sampling is performed. The number of points is controlled by exp_num_pred_points. The ANN will then predict which points it believes to be positve (i.e satisfy the constraints it has been trained on). 
+## 4. ANN_controls=True will analyze the positively precited points using the HEP packages. The true positive points are are saved to DataFiles/FDataFiles and a summary of the number of points is printed. If you have old data in the FDataFiles (belonging to the same BSM theory!), which you want to save, set keep_old_data=True. 
+## 5. For multiprocessing, number of concurrent processes to run is chosen by number_of_processes. Used when analyzing positively predicted points.
 
 
 
 # When you run the scanner (construct_training_data=True or ANN_controls=True) with collider constraints
-## 1. HiggsSignals p-value controlled by pvalue_threshold
-## 2. Accepted STU parameter intervals controlled by S-, T- and U_threshold variables.
-## 3. automatic_cs = True is recommended (only if cosmic constraints not being evaluated!). This gives a chunk of points (more than one point) to a process at a time. Reduces overhead when doing multiprocessing.
+## 1. HiggsSignals p-value controlled by pvalue_threshold. Currently set to 0.05.
+## 2. Accepted STU parameter intervals controlled by S-, T- and U_threshold variables. Currently set according to Particle Data Group, at 68% C.L.
+## 3. automatic_cs = True is recommended (only if cosmic constraints not being evaluated!). This gives a chunk of points (more than one point) to a process at a time. Reduces overhead when doing multiprocessing. Currently set to False (may increase overhead!).
 
 # When you run the scanner (construct_training_data=True or ANN_controls=True) with cosmic constraints
-## 1. Make sure that the params_4D_ref is in the right form, that is matches the return statement of the calculateParams4DRef function in the CosmoTransitions Python file. 
-## 2. Since cosmic constraints can sometimes take too long to evaluate for some points, a cut-off time is added, controlled by CT_wait_time. The scanner will wait CT_wait_time hours before aborting the computation of the cosmic observables of a point. 
-## 3. The GW detectability constrant is currently in the form of GW peak amplitude, given by Omega. This can be changed using the omega_exp variable. 
-## 4. automatic_cs = False is recommended. This gives one point at a time to each process. Since cosmic constraints can take a long time to run, this avoids the evens out the run time for each process.
+## 1. Make sure that the params_4D_ref in CT_InputFcn is UserInput is in the right form, that is matches the return statement of the calculateParams4DRef function in the CosmoTransitions Python file. For the toy models, simply uncomment the correct line(s).
+## 2. Since cosmic constraints can sometimes take too long to evaluate for some points, a cut-off time is added, controlled by CT_wait_time. The scanner will wait CT_wait_time hours before aborting the computation of the cosmic observables of a point. Currently, CT_wait_time is set to 3 (hours).
+## 3. The GW detectability constrant is currently in the form of GW peak amplitude, given by Omega. This can be changed using the omega_exp variable. Currently omega_exp is set to -18. 
+## 4. automatic_cs = False is recommended. This gives one point at a time to each process. Since cosmic constraints can take a long time to run, this avoids the evens out the run time for each process. 
 

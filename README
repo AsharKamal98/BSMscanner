@@ -69,3 +69,8 @@ Three toy models (THDM, SM+Singlet, SM+Singlet+Triplet) are already defined in t
 ## 3. The GW detectability constrant is currently in the form of GW peak amplitude, given by Omega. This can be changed using the omega_exp variable. Currently omega_exp is set to -18. 
 ## 4. automatic_cs = False is recommended. This gives one point at a time to each process. Since cosmic constraints can take a long time to run, this avoids the evens out the run time for each process. 
 
+
+# Known bugs/issues:
+## 1. Training data construction and neural network training needs to be done in two seperate sessions, i.e. code needs to be run twice (which practically is what one usually does). 
+## 2. Input for CosmoTransitions (in CT_InputFcn in UserInput.py) must be set manually at the moment. 
+## 3. Previously, SPheno parameters had to be given LesHouches numbers in increasing order, starting at 1. This is now fixed, needs to be tested. 

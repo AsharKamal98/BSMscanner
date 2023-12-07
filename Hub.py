@@ -56,7 +56,7 @@ def Main(construct_trn_data, keep_old_data,
         controlling positively predicted points)
     """
 
-    #------------CONSTRUCT COLLIDER TRAINING DATA FOR NETWORK----------------
+    #------------------CONSTRUCT TRAINING DATA FOR NETWORK-----------------------
     if construct_trn_data:
         print("\n---------------- TRAINING DATA CONSTRUCTION -----------------")
         # Initialize data filesi (TDataFiles)

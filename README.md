@@ -1,31 +1,31 @@
 # This code relies on:
-## 1. SPheno for computation of collider observables and other theoretical computations (https://spheno.hepforge.org/)
-## 2. HiggsBounds and HiggsSignals for Higgs-related collider observables (https://gitlab.com/higgsbounds/higgsbounds, https://gitlab.com/higgsbounds/higgssignals)
-## 3. CosmoTransitions for computation of gravitational-wave related observables (https://github.com/clwainwright/CosmoTransitions)
-## 4. gwFuns.py script written by António Morais for computation of gravitational-wave related observables (e.g. energy budget alpha or inverse phase transition duration beta) (script not publicly available)
+### 1. SPheno for computation of collider observables and other theoretical computations (https://spheno.hepforge.org/)
+### 2. HiggsBounds and HiggsSignals for Higgs-related collider observables (https://gitlab.com/higgsbounds/higgsbounds, https://gitlab.com/higgsbounds/higgssignals)
+### 3. CosmoTransitions for computation of gravitational-wave related observables (https://github.com/clwainwright/CosmoTransitions)
+### 4. gwFuns.py script written by António Morais for computation of gravitational-wave related observables (e.g. energy budget alpha or inverse phase transition duration beta) (script not publicly available)
 For the BSM theory toy models available in the code, the following were also used:
-## 5. SARAH for model implementation (https://sarah.hepforge.org/)
-## 6. DRalgo for construction of finite-temperature potantial (https://github.com/DR-algo/DRalgo)
-## 7. export code from DRalgo to CosmoTransitions written by Mårten Bertenstam (scirpt not publicly available)
+### 5. SARAH for model implementation (https://sarah.hepforge.org/)
+### 6. DRalgo for construction of finite-temperature potantial (https://github.com/DR-algo/DRalgo)
+### 7. export code from DRalgo to CosmoTransitions written by Mårten Bertenstam (scirpt not publicly available)
 
 # Pre-defined toy models:
 Three toy models (THDM, SM+Singlet, SM+Singlet+Triplet) are already defined in the code. The relevant files to these models using the HEP packages can be found in the HEPfiles directory. The THDM is implemented for the collider constraints, SM+Singlet for cosmic constraints and SM+Singlet+Triplet for collider+cosmic constraints. 
 
 # HEP packages and other:
-## 1. For collider constraints, install and compile collider (HEP) packages
+### 1. For collider constraints, install and compile collider (HEP) packages
 - Install SPheno, HiggsBounds and HiggsSignals. The packages are available in the links provided above, but specific versions can also be found in the HEPfiles directory.
 - Implement and compile your BSM model in SPheno (e.g. using SARAH).
 - If you want to use one of the pre-defined toy models, the LesHouches input files and SPheno executable files for each model are found in the HEPfiles/{ModelName} directory. Place the LesHouches file in the SPheno directory, and the executable SPheno{ModelName} in the SPheno/bin directory. 
 - Compile HiggsBounds and HiggsSignals.
 - Make sure that each package runs using your BSM theory for a specific parameter space point.
 
-## 2. For cosmic constraints, install and compile cosmic (HEP) packages
+### 2. For cosmic constraints, install and compile cosmic (HEP) packages
 - Install CosmoTransitions. The package is available in the links provided above, but a specific version can also be found in the HEPfiles directory.
 - Implement the finite-temperature potential into CosmoTransitions (e.g. using DRalgo and Mårtens code).
 - If you want to use one of the pre-defined toy models, you can find the CosmoTransition files for each model is found in the HEPfiles/{ModelName} directory (the THDM CosmoTrnasition file is a bit buggy, but still runs).
 - Make sure CosmoTransitions runs for a specific parameter space point.
 
-## 3. Place the CosmoTransitions Python file in the example directoy of DRalgo.
+### 3. Place the CosmoTransitions Python file in the example directoy of DRalgo.
 
 ## 4. Place the gwFuns.py (found in HEPfiles) written by Antonio in the DRalgo examples directory.
 

@@ -1,6 +1,9 @@
 # BSMscanner
 Beyond the Standard Model parameter space scanner assisted by machine learning. Scanner applies theoretical, collider and cosmic constraints.
 
+## Pre-defined toy models
+Three toy models (THDM, SM+Singlet, SM+Singlet+Triplet) are already defined in the code. The relevant files to these models using the HEP packages can be found in the HEPfiles directory. The THDM is implemented for the collider constraints, SM+Singlet for cosmic constraints and SM+Singlet+Triplet for collider+cosmic constraints. 
+
 ## Dependecies
 Following libraries are required for applying the theoretical, collider and cosmic constraints using BSMscanner
 1. `SPheno` for computation of collider observables and other theoretical computations (https://spheno.hepforge.org/)
@@ -13,9 +16,6 @@ For the BSM theory toy models available in the code, the following were also use
 5. `SARAH` for model implementation (https://sarah.hepforge.org/)
 6. `DRalgo` for construction of finite-temperature potantial (https://github.com/DR-algo/DRalgo)
 7. export code from `DRalgo` to `CosmoTransitions` written by Mårten Bertenstam (scirpt not publicly available)
-
-## Pre-defined toy models
-Three toy models (THDM, SM+Singlet, SM+Singlet+Triplet) are already defined in the code. The relevant files to these models using the HEP packages can be found in the HEPfiles directory. The THDM is implemented for the collider constraints, SM+Singlet for cosmic constraints and SM+Singlet+Triplet for collider+cosmic constraints. 
 
 ## Manual
 1. For collider constraints, install and compile collider (HEP) packages

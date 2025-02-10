@@ -47,23 +47,23 @@ Three toy models (THDM, SM+Singlet, SM+Singlet+Triplet) are already defined in t
 ## 1. Set construct_training_data=True. The training data is saved to DataFiles/TDataFiles and a summary of the number of points satisfying each constraint is printed. If you have old data in the TDataFiles (belonging to the same BSM theory!), which you want to save, set keep_old_data=True.
 ## 2. Intersections of the n-dimensional parameter space containing these points will automatically be plotted and saved in the Figures directory, where n is the number of free parameters for the BSM theory. One can choose to plot either negative/positive points, or points satisfying each constraint seperately. This is controlled by the plot_seperate_constr input.
 ## 3. The number of points scanned is controlled by the exp_num_training_points input. 
-## 4. For multiprocessing, number of concurrent processes to run is chosen by number_of_processes. Used when analyzing randomly sampled points.
+## 4. For multiprocessing, number of concurrent processes to run is chosen by num_processes. Used when analyzing randomly sampled points.
 
 # Applying deep learning
-## 1. To train a neural network using the data stored in DataFiles/TDataFiles, set train_ANN=True. Most hyperparameters (ANN parameters) can be found under the ANN Settings section. To change number of hidden layers and nodes, activation functions, optimizer etc., one must go the the Network.py file directly where the ANN is defined, under the ConstructModel function. The trained ANN will be saved if save_ANN=True, in the SavedANNs/BSM_model-ANN directory, which means one can save one ANN model per BSM theory. 
-## 2. If a previously trained and saved ANN exists, it can be loaded by load_ANN=True. The ANN belonging to the given BSM theory will be loaded. 
-## 3. If ANN_predicts=True, a (second preferably larger) parameter space sampling is performed. The number of points is controlled by exp_num_pred_points. The ANN will then predict which points it believes to be positve (i.e satisfy the constraints it has been trained on). 
-## 4. ANN_controls=True will analyze the positively precited points using the HEP packages. The true positive points are are saved to DataFiles/FDataFiles and a summary of the number of points is printed. If you have old data in the FDataFiles (belonging to the same BSM theory!), which you want to save, set keep_old_data=True. 
-## 5. For multiprocessing, number of concurrent processes to run is chosen by number_of_processes. Used when analyzing positively predicted points.
+## 1. To train a neural network using the data stored in DataFiles/TDataFiles, set train_ann=True. Most hyperparameters (ANN parameters) can be found under the ANN Settings section. To change number of hidden layers and nodes, activation functions, optimizer etc., one must go the the Network.py file directly where the ANN is defined, under the ConstructModel function. The trained ANN will be saved if save_ann=True, in the SavedANNs/BSM_model-ANN directory, which means one can save one ANN model per BSM theory. 
+## 2. If a previously trained and saved ANN exists, it can be loaded by load_ann=True. The ANN belonging to the given BSM theory will be loaded. 
+## 3. If ann_predicts=True, a (second preferably larger) parameter space sampling is performed. The number of points is controlled by exp_num_pred_points. The ANN will then predict which points it believes to be positve (i.e satisfy the constraints it has been trained on). 
+## 4. ann_controls=True will analyze the positively precited points using the HEP packages. The true positive points are are saved to DataFiles/FDataFiles and a summary of the number of points is printed. If you have old data in the FDataFiles (belonging to the same BSM theory!), which you want to save, set keep_old_data=True. 
+## 5. For multiprocessing, number of concurrent processes to run is chosen by num_processes. Used when analyzing positively predicted points.
 
 
 
-# When you run the scanner (construct_training_data=True or ANN_controls=True) with collider constraints
+# When you run the scanner (construct_training_data=True or ann_controls=True) with collider constraints
 ## 1. HiggsSignals p-value controlled by pvalue_threshold. Currently set to 0.05.
 ## 2. Accepted STU parameter intervals controlled by S-, T- and U_threshold variables. Currently set according to Particle Data Group, at 68% C.L.
 ## 3. automatic_cs = True is recommended (only if cosmic constraints not being evaluated!). This gives a chunk of points (more than one point) to a process at a time. Reduces overhead when doing multiprocessing. Currently set to False (may increase overhead!).
 
-# When you run the scanner (construct_training_data=True or ANN_controls=True) with cosmic constraints
+# When you run the scanner (construct_training_data=True or ann_controls=True) with cosmic constraints
 ## 1. Make sure that the params_4D_ref in CT_InputFcn is UserInput is in the right form, that is matches the return statement of the calculateParams4DRef function in the CosmoTransitions Python file. For the toy models, simply uncomment the correct line(s).
 ## 2. Since cosmic constraints can sometimes take too long to evaluate for some points, a cut-off time is added, controlled by CT_wait_time. The scanner will wait CT_wait_time hours before aborting the computation of the cosmic observables of a point. Currently, CT_wait_time is set to 3 (hours).
 ## 3. The GW detectability constrant is currently in the form of GW peak amplitude, given by Omega. This can be changed using the omega_exp variable. Currently omega_exp is set to -18. 

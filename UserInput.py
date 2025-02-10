@@ -3,8 +3,8 @@ import numpy as np
 ############################################################### BSM DETAILS ########################################################
 #===================================================================================================================================
 
-num_h = "2"     # Number of neutral (massive) Higgs bosons for HiggsBounds/Signals. Use citation marks.
-num_hp = "0"    # Number of positively (or negatively) charged (massive) Higgs bosons for HiggsBounds/Signals. Use citation marks.
+num_h = "3"     # Number of neutral (massive) Higgs bosons for HiggsBounds/Signals. Use citation marks.
+num_hp = "1"    # Number of positively (or negatively) charged (massive) Higgs bosons for HiggsBounds/Signals. Use citation marks.
 
 
 #BSM_model = "TSM"
@@ -19,8 +19,8 @@ d_TSM = { \
 
 
 
-#BSM_model = "THDM"
-d_THDM = { \
+BSM_model = "THDM"
+d = { \
 
     "Parameter name": ['M11','M22','M12','lam1','lam2','lam3','lam4','lam5','TanBeta','mC','mA','mh','mH', 'v1', 'v2'], \
 
@@ -68,14 +68,25 @@ d_SSM = { \
 ########################################################### SCANNER INPUT #######################################################
 #================================================================================================================================
 
-############################ TRAINING DATA ###########################
-# Construct training data for ANN
+#-------------------------- MULTIPROCESSING -------------------------#
+# Different parts of the code can be parallelized. Variable below specifies number of concurrent processes to run when:
+# 1. constructing training data
+# 2. training ANN models
+# 2. searching for positive points using trained ANNs
+# NOTE: To  maximal efficiency, set num_processes close to the available number of nodes on PC
+num_processes = 1
+
+#--------------------------- TRAINING DATA --------------------------#
+# Construct training data for ANN training
 construct_training_data = False
+# Samples 2^(exp_num_training_points) points from parameter space for training data.
+# NOTE: only relevant when construct_training_data=True
+exp_num_training_points = 4
 
 # Plotting training data variable. If False, positive and negative points in training data
 # are plotted (where positive points satisfy all given constraints simultaneously). If True,
 # points satisfying each induvidual constraint are plotted.
-plot_seperate_constr = True
+plot_seperate_constr = False
 
 # sampling training data to be plotted.
 # If plot_seperate_constr = False: 0.0 = negative points, 1.0 = positive points.
@@ -94,63 +105,91 @@ plot_sampling = None
 # for training data construction, FDataFiles for ANN data collection)
 keep_old_data = False
 
-############################# ANN STUFF ##############################
-# Train ANN and save ...
-train_ANN = False
-save_ANN = False
-# ... or load ANN saved from before
-load_ANN = False
+#------------- ANN TRAINING AND LOADING TRAINED MODELS --------------#
+# Train a new ANN model on existing training data (see above)
+train_ann = True
+# Multiple ANNs can be trained, and the best performer is chosen
+num_ann_models = 1
+# Parallel processes share model performance with eachother using optuna study
+# NOTE: If a study with given name already exists, the code will ask you to delete it
+optuna_study_name = "my_study"
+# Save best performer ANN from above
+save_ann = False
+# Load trained ANN
+load_ann = False
 
+#---------------------- ANN TRAINING SETTINGS -----------------------#
+# Print ANN training details every epoch. Recommendation: network_verbose=False when num_processes > 1
+network_verbose=True
+# Number of epochs to train ANN. Recommended: network_epochs=2000
+network_epochs=5
+# Under and over sampling training data. Recommended: None
+under_sample=None
+over_sample=None
+# beta**2 in FBetaScore. Controls the relative importance of recall compared to precision.
+# E.g. fscore_beta_sq = 1: precision and recall are equally weighted
+# fscore_beta_sq = 0.25: 4× precision priority over Recall	
+# fscore_beta_sq = 4: 4× recall priority over precision
+fscore_beta_sq = 1.0
+# Stops ANN training if no improvement in perfomance (val_loss) detected. Recommended: early_stop=True
+early_stop = True
+# How many iterations to wait without improvement before stopping ANN training
+early_stop_patience = 200
+# Minimum improvement in performance required before stopping ANN training
+early_stop_min_delta=0.001
+# Restore weigths to state where model stopped improving performance
+early_stop_restore_best_weights=False
+
+#-------------------------- ANN HYPERPARAMETERS ----------------------------#
+# The code will look for the best set of hyperparameters defined by space defined below
+num_hidden_layers_sampling = [3,10]
+num_hidden_nodes_sampling = [20,80]
+regularization_strength_sampling = [0.001, 0.003]
+adam_learning_rate_sampling = [0.001, 0.003]
+# Number of batches per epoch
+steps_per_epoch_sampling = [1,5]
+# Weight of positive class compared to negative class
+class_weight_sampling = [3,12]
+
+#------------------------- ANN PREDICTIONS --------------------------#
 # Make predictions using trained or loaded ANN
-ANN_predicts = False
+ann_predicts = False
+# Samples 2^(exp_num_pred_points) points from parameter space for which trained neural network make predictions on.
+# NOTE: only relevant when network_predicts=True
+exp_num_pred_points = 6
 # Run positively predicted points through HEP pacakges and save real positives
-ANN_controls = False
+ann_controls = False
 
-########################### MULTIPROCESSING ##########################
-# Number of processes to use when either constructing training data or
-# using ANN to finding positive points.
-number_of_processes = 1
-
-########################### CONSTRAINTS ##############################
+#-------------------------- CONSTRAINTS -----------------------------#
 # Type of constraints to consider when either constructing training data, or 
 # training ANN on stored training data.
 constraint_type = "collider"  # "collider", "cosmic" or "both"
-
 # Optimize by only checking cosmic constraints if collider already satisfied
 optimize_constraints = True
-
 # Only used if cosmic constraints evaluated (data_type2='cosmic' or data_type2='both').
 # If cosmic constraints take longer than CT_wait_time, scanner will abort that particular point.
 CT_wait_time = 3.0
 
 
-#####################  PARAMETER SPACE SAMPLING ######################
-# Only used if training data construction turned on (construct_trn_data=True).
-# Samples 2^(exp_num_training_points) points from parameter space for training data.
-exp_num_training_points = 6
-
-# Only used if trained network makes predictions (network_predicts=True).
-# Samples 2^(exp_num_pred_points) points from parameter space for which trained neural network make predictions on.
-exp_num_pred_points = 6
-
-
-########################################################## ANN SETTINGS #########################################################
+############################################################### PATHS ###########################################################
 #================================================================================================================================
+# Path to SPheno, HiggsBounds/HiggsSignals (HBS) and CosmoTransitions (CT). Note that for HBS and CT, they are run in their respective examples directories..
+SPheno_path = "SPheno-4.0.5"
+HB_path = "higgsbounds-5.10.2/build"
+HS_path = "higgssignals-2.6.2/build"
+CT_path = "DRalgo-1.0.2-beta/examples"
 
-# Print ANN training details every epoch
-network_verbose=False
-# Number of epochs to train ANN
-network_epochs=500
-# Under and over sampling training data
-under_sample=None
-over_sample=None
-# Weight of positive class compared to negative class
-class_weight=1.5
-# Number of batches per epoch
-steps_per_epoch = 5
-# Not currently being used
-#batch_size=700
+# Path to CT file and name of class defined within.
+#CT_infile_name = "LS_TColor_DRPython" #Remove .py
+#CT_class_name = "LS_TColor"     # Not being used
+#CT_infile_name = "THDM_DRPython" #Remove .py
+#CT_class_name = "THDM" 
+#CT_infile_name = "SSM_DRPython" #Remove .py
+#CT_class_name = "SSM"
 
+
+########################################################### HEP PACKAGES ########################################################
+#================================================================================================================================
 # HiggsSignals p-value
 pvalue_threshold = 0.05
 # STU parameters intervals. E.g. S = S_threshold[0] \pm S_threshold[1]
@@ -182,27 +221,6 @@ def CT_InputFcn(in_param_list):
     ##### SSM Specific #####
     #params_4D_ref = np.array([gwsq, gYsq, gssq, in_param_list[5], in_param_list[6], in_param_list[4], in_param_list[2], in_param_list[3], yt, in_param_list[1], in_param_list[0]])
     return params_4D_ref
-
-
-############################################################### PATHS ###########################################################
-#================================================================================================================================
-# Path to SPheno, HiggsBounds/HiggsSignals (HBS) and CosmoTransitions (CT). Note that for HBS and CT, they are run in their respective examples directories..
-SPheno_path = "SPheno-4.0.5"
-HB_path = "higgsbounds-5.10.2/build"
-HS_path = "higgssignals-2.6.2/build"
-CT_path = "DRalgo-1.0.2-beta/examples"
-
-# Path to CT file and name of class defined within.
-#CT_infile_name = "LS_TColor_DRPython" #Remove .py
-#CT_class_name = "LS_TColor"     # Not being used
-#CT_infile_name = "THDM_DRPython" #Remove .py
-#CT_class_name = "THDM" 
-#CT_infile_name = "SSM_DRPython" #Remove .py
-#CT_class_name = "SSM"
-
-
-############################################################## OTHER ###########################################################
-#================================================================================================================================
 
 automatic_cs = False    # How many points to give a process at a time, when doing multiprocessing
                         # Recomendation: automatic_cs = False if cosmic constraints evaluated, else True

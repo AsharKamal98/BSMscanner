@@ -56,6 +56,16 @@ def Main(construct_trn_data, keep_old_data,
         controlling positively predicted points)
     """
 
+
+#################################################### Printing BSM summary #######################################################
+#================================================================================================================================
+
+    #---------------------------PRINT BSM SUMMARY--------------------------------
+    print("\n-------------------- BSM THEORY SUMMARY ---------------------")
+    print("BSM theory:", BSM_model)
+    print("Number of free parameters: ", num_free_param, series_free_param.tolist())
+    print("Number of fixed parameters:", num_fixed_param, series_fixed_param.tolist())
+
     #------------------CONSTRUCT TRAINING DATA FOR NETWORK-----------------------
     if construct_trn_data:
         print("\n---------------- TRAINING DATA CONSTRUCTION -----------------")
@@ -317,13 +327,13 @@ if __name__ == "__main__":
             construct_trn_data = construct_training_data,
             keep_old_data = keep_old_data,
             data_type2 = constraint_type,
-            train_network= train_ANN,
-            load_network= load_ANN,
-            save_network= save_ANN,
-            network_predicts = ANN_predicts,
-            network_controls = ANN_controls,
+            train_network= train_ann,
+            load_network= load_ann,
+            save_network= save_ann,
+            network_predicts = ann_predicts,
+            network_controls = ann_controls,
             optimize = optimize_constraints,
-            num_processes = number_of_processes
+            num_processes = num_processes
             )
 
 

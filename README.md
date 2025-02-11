@@ -12,7 +12,6 @@ Following libraries are required for applying the theoretical, collider and cosm
 4. gwFuns.py script written by António Morais for computation of gravitational-wave related observables (e.g. energy budget alpha or inverse phase transition duration beta) (script not publicly available)
 
 For the BSM theory toy models available in the code, the following were also used
-
 5. `SARAH` for model implementation (https://sarah.hepforge.org/)
 6. `DRalgo` for construction of finite-temperature potantial (https://github.com/DR-algo/DRalgo)
 7. export code from `DRalgo` to `CosmoTransitions` written by Mårten Bertenstam (scirpt not publicly available)
@@ -36,7 +35,6 @@ For the BSM theory toy models available in the code, the following were also use
 4. Place the gwFuns.py (found in HEPfiles) written by Antonio in the `DRalgo` examples directory.
 
 5. In the UserInput.py file, add the paths to the HEP packages and files.
-
 
 
 #### BSM theory input:

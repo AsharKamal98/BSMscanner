@@ -107,7 +107,7 @@ keep_old_data = False
 
 #------------- ANN TRAINING AND LOADING TRAINED MODELS --------------#
 # Train a new ANN model on existing training data (see above)
-train_ann = True
+train_ann = False
 # Multiple ANNs can be trained, and the best performer is chosen
 num_ann_models = 1
 # Parallel processes share model performance with eachother using optuna study
@@ -120,7 +120,7 @@ load_ann = False
 
 #---------------------- ANN TRAINING SETTINGS -----------------------#
 # Print ANN training details every epoch. Recommendation: network_verbose=False when num_processes > 1
-network_verbose=True
+network_verbose=False
 # Number of epochs to train ANN. Recommended: network_epochs=2000
 network_epochs=5
 # Under and over sampling training data. Recommended: None

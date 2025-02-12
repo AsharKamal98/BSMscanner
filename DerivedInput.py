@@ -89,16 +89,3 @@ if constraint_type == "collider" or constraint_type == "both":
 
     HB_output_filename = "HiggsBounds_results.dat"
     HS_output_filename = "HiggsSignals_results.dat"
-
-
-#################################################### Printing BSM summary #######################################################
-#================================================================================================================================
-print("\n-------------------- BSM THEORY SUMMARY ---------------------")
-print("BSM theory:", BSM_model)
-print("Number of free parameters: ", num_free_param, series_free_param.tolist())
-print("Number of fixed parameters:", num_fixed_param, series_fixed_param.tolist())
-
-
-
-
-

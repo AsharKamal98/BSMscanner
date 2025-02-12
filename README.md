@@ -12,7 +12,6 @@ Following libraries are required for applying the theoretical, collider and cosm
 4. gwFuns.py script written by António Morais for computation of gravitational-wave related observables (e.g. energy budget alpha or inverse phase transition duration beta) (script not publicly available)
 
 For the BSM theory toy models available in the code, the following were also used
-
 5. `SARAH` for model implementation (https://sarah.hepforge.org/)
 6. `DRalgo` for construction of finite-temperature potantial (https://github.com/DR-algo/DRalgo)
 7. export code from `DRalgo` to `CosmoTransitions` written by Mårten Bertenstam (scirpt not publicly available)
@@ -38,7 +37,6 @@ For the BSM theory toy models available in the code, the following were also use
 5. In the UserInput.py file, add the paths to the HEP packages and files.
 
 
-
 #### BSM theory input:
 1. Insert BSM model parameter details into BSMscanner via the UserInput.py file. Note that here you must supply the `SPheno` input parameters, and can additionally include other parameters such as particle masses, mixing angles etc. These extra parameters must be  connected to the SPheno parameters by some known relation. The following information is required.
    - Parameter names: names must work as Python variable names. Note that the `SPheno` input parameter's names do NOT have to match names given in `SARAH` or `SPheno`.
@@ -56,13 +54,11 @@ For the BSM theory toy models available in the code, the following were also use
 4. For multiprocessing, number of concurrent processes to run is chosen by number_of_processes. Used when analyzing randomly sampled points.
 
 #### Applying deep learning
-1. To train a neural network using the data stored in DataFiles/TDataFiles, set train_ANN=True. Most hyperparameters (ANN parameters) can be found under the ANN Settings section. To change number of hidden layers and nodes, activation functions, optimizer etc., one must go the the Network.py file directly where the ANN is defined, under the ConstructModel function. The trained ANN will be saved if save_ANN=True, in the SavedANNs/BSM_model-ANN directory, which means one can save one ANN model per BSM theory. 
-2. If a previously trained and saved ANN exists, it can be loaded by load_ANN=True. The ANN belonging to the given BSM theory will be loaded. 
-3. If ANN_predicts=True, a (second preferably larger) parameter space sampling is performed. The number of points is controlled by exp_num_pred_points. The ANN will then predict which points it believes to be positve (i.e satisfy the constraints it has been trained on). 
+1. To train a neural network using the data stored in DataFiles/TDataFiles, set train_ann=True. Most hyperparameters (ANN parameters) can be found under the ANN Settings section. To change number of hidden layers and nodes, activation functions, optimizer etc., one must go the the Network.py file directly where the ANN is defined, under the ConstructModel function. The trained ANN will be saved if save_ANN=True, in the SavedANNs/BSM_model-ANN directory, which means one can save one ANN model per BSM theory. 
+2. If a previously trained and saved ANN exists, it can be loaded by load_ann=True. The ANN belonging to the given BSM theory will be loaded. 
+3. If ann_predicts=True, a (second preferably larger) parameter space sampling is performed. The number of points is controlled by exp_num_pred_points. The ANN will then predict which points it believes to be positve (i.e satisfy the constraints it has been trained on). 
 4. ANN_controls=True will analyze the positively precited points using the HEP packages. The true positive points are are saved to DataFiles/FDataFiles and a summary of the number of points is printed. If you have old data in the FDataFiles (belonging to the same BSM theory!), which you want to save, set keep_old_data=True. 
 5. For multiprocessing, number of concurrent processes to run is chosen by number_of_processes. Used when analyzing positively predicted points.
-
-
 
 #### When you run the scanner (construct_training_data=True or ANN_controls=True) with collider constraints
 1. `HiggsSignals` p-value controlled by pvalue_threshold. Currently set to 0.05.

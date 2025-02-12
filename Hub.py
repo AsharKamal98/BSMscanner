@@ -56,6 +56,16 @@ def Main(construct_trn_data, keep_old_data,
         controlling positively predicted points)
     """
 
+
+#################################################### Printing BSM summary #######################################################
+#================================================================================================================================
+
+    #---------------------------PRINT BSM SUMMARY--------------------------------
+    print("\n-------------------- BSM THEORY SUMMARY ---------------------")
+    print("BSM theory:", BSM_model)
+    print("Number of free parameters: ", num_free_param, series_free_param.tolist())
+    print("Number of fixed parameters:", num_fixed_param, series_fixed_param.tolist())
+
     #------------------CONSTRUCT TRAINING DATA FOR NETWORK-----------------------
     if construct_trn_data:
         print("\n---------------- TRAINING DATA CONSTRUCTION -----------------")
@@ -82,10 +92,13 @@ def Main(construct_trn_data, keep_old_data,
     #----------------------------TRAIN/LOAD NETWORK-------------------------------
     if train_network and load_network:
         sys.exit("Both train_network and load_network have been set to True. Choose one")
-    if train_network or load_network:
+    elif train_network or load_network:
         print("\n---------------- INITIALIZING NEURAL NETWORK ----------------")
-        subprocess.run(["mkdir", "-p", "SavedANNs/{}-ANN".format(BSM_model)])
-        model, norm_var = NW.TrainANN(data_type2, under_sample, over_sample, load_network, train_network, save_network)
+        if train_network:
+            subprocess.run(["mkdir", "-p", "SavedANNs/{}-ANN".format(BSM_model)])
+            model, norm_var = NW.TrainANN(data_type2, under_sample, over_sample, save_network)
+        elif load_network:
+            model, norm_var = NW.LoadANN()
 
     #------------TRAINED NETWORK MAKES PREDICTIONS----------------
         if network_predicts:
@@ -300,7 +313,7 @@ def ComputeChunkSize(num_samples, num_processes):
     """ Number of points to hand each concurrent process at a time. Chunk size greater than
     1 reduces overhead """
 
-    chunksize, extra = divmod(num_samples, num_processes * cs_ratio)
+    chunksize, _ = divmod(num_samples, num_processes * cs_ratio)
     if chunksize < 1:
         chunksize = 1
     if automatic_cs:
@@ -308,18 +321,20 @@ def ComputeChunkSize(num_samples, num_processes):
     else:
         return 1
 
-Main(
-        construct_trn_data = construct_training_data,
-        keep_old_data = keep_old_data,
-        data_type2 = constraint_type,
-        train_network= train_ANN,
-        load_network= load_ANN,
-        save_network= save_ANN,
-        network_predicts = ANN_predicts,
-        network_controls = ANN_controls,
-        optimize = optimize_constraints,
-        num_processes = number_of_processes
-        )
+
+if __name__ == "__main__":
+    Main(
+            construct_trn_data = construct_training_data,
+            keep_old_data = keep_old_data,
+            data_type2 = constraint_type,
+            train_network= train_ann,
+            load_network= load_ann,
+            save_network= save_ann,
+            network_predicts = ann_predicts,
+            network_controls = ann_controls,
+            optimize = optimize_constraints,
+            num_processes = num_processes
+            )
 
 
 

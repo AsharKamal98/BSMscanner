@@ -109,11 +109,14 @@ keep_old_data = False
 # Train a new ANN model on existing training data (see above)
 train_ann = False
 # Multiple ANNs can be trained, and the best performer is chosen
+# NOTE: only relevant when train_ann=True
 num_ann_models = 1
 # Parallel processes share model performance with eachother using optuna study
 # NOTE: If a study with given name already exists, the code will ask you to delete it
+# NOTE: only relevant when train_ann=True
 optuna_study_name = "my_study"
 # Save best performer ANN from above
+# NOTE: only relevant when train_ann=True
 save_ann = False
 # Load trained ANN
 load_ann = False

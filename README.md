@@ -64,7 +64,7 @@ The `num_processes` controls the number of processes spawned for the tasks above
 #### Applying deep learning
 - Training ANNs
    1. To train a neural network using the data stored in DataFiles/TDataFiles, set `train_ann=True`. The code will train `num_ann_models` number of ann models using different hyperparameters, returning the best performing model (based on F-beta score, β=1). For multiprocessing, number of concurrent processes to run is chosen by `num_processes`. A shared optuna study `optuna_study_name` is used to share the performance of the different models. To save the best performer, set `save_ann=True, which will save it in the SavedANNs/BSM_model-ANN directory.One ANN model per BSM theory can be saved.
-   2. Data preparation (bosting) and ANN hyperparameter (hidden layers, hidden nodes, regularization strength, class weighting etc.) variables can also be set by the user. Note that the hyperparameters are specified in lists, from which the `num_ann_models` models sample their hyperparameter from, in order to find the optimal set. 
+   2. Data preparation (under- and oversampling) and ANN hyperparameter (hidden layers, hidden nodes, regularization strength, class weighting etc.) variables can also be set by the user. Note that the hyperparameters are specified in lists, from which the `num_ann_models` models sample their hyperparameter from, in order to find the optimal set. 
 - Loading trained ANNs
    1. If a previously trained and saved ANN exists, it can be loaded by `load_ann=True`. The ANN belonging to the given BSM theory will be loaded (determined by `BSM_model`).
 - Looking for positive points using Trained ANNs
